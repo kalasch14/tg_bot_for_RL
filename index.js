@@ -42,14 +42,31 @@ bot.use(stage.middleware())
 
 bot.start( async (ctx) => {
 
-    const chatId = ctx.chat.id
+    //const chatId = ctx.chat.id
     try {
     
 
-        await UserModel.create({chatId})
-
         await sequelize.authenticate()
         await sequelize.sync()
+        let name = ''
+        if(ctx.chat.last_name == undefined){
+            name = ctx.chat.first_name
+        } else name = `${ctx.chat.last_name}  ${ctx.chat.first_name}`
+
+
+        await UserModel.create({
+
+            chatId: ctx.chat.id,
+            firstName: ctx.chat.first_name,
+            lastName: ctx.chat.last_name,
+            fullName: name,
+            username: ctx.chat.username
+
+        })
+
+        //await UserModel.create({chatId})
+
+        
 
     } catch (e) {
         console.log(e);
@@ -63,20 +80,27 @@ bot.start( async (ctx) => {
 
     //ctx.scene.enter('task')
 
-    await ctx.reply('Privet', keyboard.reply())
+    await ctx.reply('Приветствую!', keyboard.reply())
 
     //await ctx.reply('Simple inline keyboard', keyboard.inline())
 })
 
 //Реакция на кнопки
 
-bot.hears('Входящие задания', async (ctx) => {
 
-    const chatId = ctx.chat.id
-    const user = await UserModel.findOne({chatId})
-    ctx.reply(`Задание выполнено: ${user.task}`)
 
-})
+
+bot.hears('Входящие задания', async (ctx) => {ctx.scene.enter('incoming')})
+
+    // const chatId = ctx.chat.id
+    // const user = await UserModel.findOne({
+    //     where: {
+    //         username: "kalashnikov_14"
+    //     }
+    // })
+    //ctx.reply(`Задание выполнено: ${user.firstName}`)
+
+//})
 
 
 bot.hears('Исходящие задания', async (ctx) => ctx.scene.enter('outbound'))

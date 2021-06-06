@@ -12,11 +12,33 @@ const User = sequelize.define('user', {
         type: DataTypes.STRING,
         unique: true
     },
+    firstName: {
+        type: DataTypes.STRING,
+    },
+
+    lastName: {
+        type: DataTypes.STRING,
+    },
+
+    fullName: {
+        type: DataTypes.STRING,
+    },
+
+    username: {
+        type: DataTypes.STRING,
+        unique: true,
+    },
+
     task: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
     }
-})
+},
+{
+    // tableName: 'users',
+    // //freezeTableName: true
+}
+)
 
 
 module.exports = User

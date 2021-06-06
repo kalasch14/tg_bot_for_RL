@@ -15,11 +15,13 @@ let TaskArr = []
 class ScenesGenerator {
 
 //Описание задания
-    constructor(task, worker, priority, deadline){
+    constructor(task, worker, priority, deadline, user, flag){
         this.task = task
         this.worker = worker
         this.priority = priority
         this.deadline = deadline
+        this.user = user
+        this.flag = flag
     }
 
 
@@ -49,6 +51,7 @@ class ScenesGenerator {
 //Выбор ответственного лица
 
     WorkerGen(){
+        
         const worker = new BaseScene('worker')
 
         worker.enter(async (ctx) => {
@@ -56,10 +59,30 @@ class ScenesGenerator {
         })
 
         worker.on('text', async (ctx) => {
+
             const currentWorker = String(ctx.message.text)
 
-            if(currentWorker){
-                this.worker = currentWorker
+             this.user = await UserModel.findOne({
+                where: {
+                    username: currentWorker
+                }
+            })
+
+            if(this.user == null){
+                this.user = await UserModel.findOne({
+                    where: {
+                        fullName: currentWorker
+                    }
+                })
+            } 
+            if(this.user == null) {
+                await ctx.reply('Пользователь с таким именем или никнеймом не найден!')
+                ctx.scene.reenter()
+            } else this.flag = 1
+
+            if(this.flag == 1){
+                this.flag = 0
+                //this.worker = currentWorker
                 ctx.scene.enter('priority')
             }
         })
@@ -71,7 +94,11 @@ class ScenesGenerator {
         return worker
     }
 
+//---------------------------------------------------------------
+
 //Выбор уровня важности
+
+//--------------------------------------------------------------
 
     PriorityGen(){
         const priority = new BaseScene('priority')
@@ -101,7 +128,13 @@ class ScenesGenerator {
     }
 
 
-    //Дедлайн задания
+    
+
+//---------------------------------------------------------------
+
+//Дедлайн задания
+
+//--------------------------------------------------------------
 
     DeadlineGen(){
         const deadline = new BaseScene('deadline')
@@ -113,11 +146,30 @@ class ScenesGenerator {
         deadline.on('text', async (ctx) => {
             const dl = String(ctx.message.text)
 
+            // let user = await UserModel.findOne({
+            //     where: {
+            //         username: this.worker
+            //     }
+            // })
+
+            // if(user == null){
+            //     user = await UserModel.findOne({
+            //         where: {
+            //             fullName: this.worker
+            //         }
+            //     })
+            // } else {
+            //     ctx.reply('Пользователь с таким именем или никнеймом не найден!')
+            //     ctx.scene.reenter()
+            // }
+
+            
+
             if(dl){
                 this.deadline = dl
                 await ctx.reply(`
                 \nЗадание: ${ this.task }
-                \nИсполнитель: ${ this.worker }
+                \nИсполнитель: ${ this.user.fullName }
                 \nПриоритет: ${ this.priority }
                 \nДедлайн: ${ this.deadline }
                 `)
@@ -136,7 +188,12 @@ class ScenesGenerator {
     }
 
 
-    //проверяем задание на правильность
+//---------------------------------------------------------------
+
+//проверяем задание на правильность
+
+//--------------------------------------------------------------
+
 
     IsOkGen(){
         const isOk = new BaseScene('isOk')
@@ -146,31 +203,61 @@ class ScenesGenerator {
         })
 
     
-
         isOk.on('callback_query', async (ctx) => {
             
             const ok = String(ctx.callbackQuery.data)
 
             if(ok === '✅'){
+                // let user = await UserModel.findOne({
+                //     where: {
+                //         username: this.worker
+                //     }
+                // })
+
+                // if(user == null){
+                //     user = await UserModel.findOne({
+                //         where: {
+                //             fullName: this.worker
+                //         }
+                //     })
+                // }
 
                 await TaskModel.create({
 
                     priority: this.priority,
                     dateEnd: this.deadline,
-                    worker: this.worker,
+                    worker: this.user.fullName,
                     text: this.task,
                     initiator: ctx.from.id,
                     isDone: false
+                    
                 })
+
                 ctx.reply('Готово!')
+
+                let sender = ''
+                if(!ctx.from.last_name){
+                    sender = ctx.from.first_name
+                } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
+
+                ctx.telegram.sendMessage(this.user.chatId, `
+                \nНовое задание от ${sender}
+                \nЗадание: ${ this.task }
+                \nИсполнитель: ${ this.user.fullName }
+                \nПриоритет: ${ this.priority }
+                \nДедлайн: ${ this.deadline }
+                `)
 
                 ctx.scene.leave()
 
             } else if(ok === '❌'){
-                ctx.reply('Повторим')
+               
+                
+                await ctx.reply('Повторим')
                 ctx.scene.enter('task')
             }
         })
+
 
         isOk.on('message', (ctx) => {
             ctx.reply('Не понял, попробуй еще раз')
@@ -178,6 +265,12 @@ class ScenesGenerator {
         })
         return isOk
     }
+
+//---------------------------------------------------------------
+
+//Исходящие задания
+
+//--------------------------------------------------------------
 
 
     OutboundGen(){
@@ -192,7 +285,6 @@ class ScenesGenerator {
                 }
             })
 
-            console.log(task);
 
             if(task.length == 0){
                 await ctx.reply('Нету исходящих заданий')
@@ -225,10 +317,6 @@ class ScenesGenerator {
                     outbound.on('callback_query', async (ctx) => {
             
                         
-                        console.log('\nsdssdsd\nsdssdsd\nsdssdsd\nsdssdsd\nsdssdsd');
-                        console.log(ctx);
-                        console.log('\nsdssdsd\nsdssdsd\nsdssdsd\nsdssdsd\nsdssdsd');
-            
                         if(ctx.callbackQuery.data){
                             try {
     
@@ -238,7 +326,8 @@ class ScenesGenerator {
                                     }
                                 })
                                 await ctx.reply('Задание Удалено!')
-                                ctx.scene.leave()
+                                ctx.scene.enter('outbound')
+                                //ctx.scene.leave()
                         
                             } catch (e) {
                                 console.log(e);

@@ -19,8 +19,7 @@ const Task = sequelize.define('task', {
         type: DataTypes.STRING,
     },
     chatId: {
-        type: DataTypes.STRING,
-        unique: true
+        type: DataTypes.INTEGER,
     },
     worker: {
         type: DataTypes.STRING
@@ -35,9 +34,8 @@ const Task = sequelize.define('task', {
     
 },
 {
-    tableName: 'task',
-    schema: 'public',
-    freezeTableName: true
+    freezeTableName: true,
+    tableName: "tasks"
 }
 )
 

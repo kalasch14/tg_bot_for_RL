@@ -22,6 +22,7 @@ const priorityScene = curScene.PriorityGen()
 const deadlineScene = curScene.DeadlineGen()
 const isOkScene = curScene.IsOkGen()
 const outboundScene = curScene.OutboundGen()
+const incomingScene = curScene.IncomingGen()
 //import { getMainMenu } from './keyboards.js'
 
 //const getMainMenu = require('./keyboards.js')
@@ -32,7 +33,15 @@ bot.use(Telegraf.log())
 
 
 
-const stage = new Stage([taskScene, workerScene, priorityScene, deadlineScene, isOkScene, outboundScene])
+const stage = new Stage([
+    taskScene,
+    workerScene, 
+    priorityScene, 
+    deadlineScene, 
+    isOkScene, 
+    outboundScene,
+    incomingScene
+])
 
 bot.use(session())
 bot.use(stage.middleware())
@@ -51,7 +60,7 @@ bot.start( async (ctx) => {
         let name = ''
         if(ctx.chat.last_name == undefined){
             name = ctx.chat.first_name
-        } else name = `${ctx.chat.last_name}  ${ctx.chat.first_name}`
+        } else name = `${ctx.chat.last_name} ${ctx.chat.first_name}`
 
 
         await UserModel.create({

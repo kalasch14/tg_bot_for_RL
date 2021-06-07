@@ -9,7 +9,6 @@ const TaskModel = require('./models/task')
 
 const { Keyboard, Key } = require("telegram-keyboard")
 
-let TaskArr = []
 
 
 class ScenesGenerator {
@@ -229,9 +228,14 @@ class ScenesGenerator {
                     worker: this.user.fullName,
                     text: this.task,
                     initiator: ctx.from.id,
-                    isDone: false
+                    isDone: false,
+                    chatId: this.user.chatId
                     
                 })
+                // .catch(function(err) {
+                //     // print the error details
+                
+                // });
 
                 ctx.reply('Готово!')
 
@@ -257,6 +261,7 @@ class ScenesGenerator {
                 ctx.scene.enter('task')
             }
         })
+    
 
 
         isOk.on('message', (ctx) => {
@@ -344,11 +349,136 @@ class ScenesGenerator {
 
     }
 
+//---------------------------------------------------------------
+
+//Входящие задания
+
+//--------------------------------------------------------------
+
+IncomingGen(){
+    const incoming = new BaseScene('incoming')
+     
+    incoming.enter(async (ctx) => {
+        
+        const incomingTask = await TaskModel.findAll({
+            where: {
+                chatId: ctx.from.id,
+                isDone: false
+            }
+        })
+
+
+        if(incomingTask.length == 0){
+            //await ctx.reply(ctx.from.id)
+            await ctx.reply('Нету активных входящих заданий')
+        } else {
+
+            await ctx.reply('Входящие задания: ')
+
+            for(let i = 0; i < incomingTask.length; i++){
+
+        
+                const doneKeyboard = Keyboard.make([
+                    [Key.callback('Отметить Выполненым', incomingTask[i].dataValues.id)],
+                ]).inline()
+
+                const user = await UserModel.findAll({
+                    where: {
+                        chatId: ctx.from.id
+                    }
+                })
+
+
+                await ctx.reply(`
+                    \nЗадание: ${incomingTask[i].dataValues.text},
+                    \nИнициатор: ${incomingTask[i].dataValues.worker},
+                    \nПриоритет: ${incomingTask[i].dataValues.priority},
+                    \nДедлайн: ${incomingTask[i].dataValues.dateEnd},
+                    \nВыполнено: ${incomingTask[i].dataValues.isDone},
+                    \nВремя Создания: ${incomingTask[i].dataValues.createdAt}
+                `,
+                doneKeyboard)
+                
+        
+            }
+            
+        }
+    })
+
+
+    incoming.on('callback_query', async (ctx) => {
+            
+                        
+        if(ctx.callbackQuery.data){
+            try {
+
+                const incomingTask = await TaskModel.findOne({
+                    where: {
+                        id: ctx.callbackQuery.data
+                    }
+                })
+
+                incomingTask.isDone = true
+
+                await incomingTask.save();
+                await ctx.reply('Инициатору отправлено сообщение о выполнении!')
+
+                let sender = ''
+                if(!ctx.from.last_name){
+                    sender = ctx.from.first_name
+                } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
+
+                ctx.telegram.sendMessage(incomingTask.initiator, `
+                \n${incomingTask.worker} выполнил задание!
+                \nЗадание: ${ incomingTask.text }
+                \nПриоритет: ${ incomingTask.priority }
+                \nДедлайн: ${ incomingTask.dateEnd }
+                `)
+
+
+                // ctx.scene.enter('outbound')
+                //ctx.scene.leave()
+        
+            } catch (e) {
+                console.log(e);
+            }
+
+            //await ctx.scene.leave()
+        } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
+        ctx.scene.leave()
+    })
+
+    // incoming.on('callback_query', async (ctx) => {
+        
+                    
+    //                 if(ctx.callbackQuery.data){
+    //                     try {
+
+    //                         TaskModel.destroy({
+    //                             where: {
+    //                                 id: ctx.callbackQuery.data
+    //                             }
+    //                         })
+    //                         await ctx.reply('Задание Удалено!')
+    //                         ctx.scene.enter('outbound')
+    //                         //ctx.scene.leave()
+                    
+    //                     } catch (e) {
+    //                         console.log(e);
+    //                     }
+        
+    //                     //await ctx.scene.leave()
+    //                 } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
+    //                 ctx.scene.leave()
+    //             })
+
+
+
+    return incoming
+
 }
 
-
-
-
+}
     
 const priorityKeyboard = Keyboard.make([
     [Key.callback('Высоко','Высоко')],

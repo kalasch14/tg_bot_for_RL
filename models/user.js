@@ -9,7 +9,7 @@ const User = sequelize.define('user', {
         autoIncrement: true
     },
     chatId: {
-        type: DataTypes.STRING,
+        type: DataTypes.INTEGER,
         unique: true
     },
     firstName: {
@@ -35,8 +35,8 @@ const User = sequelize.define('user', {
     }
 },
 {
-    // tableName: 'users',
-    // //freezeTableName: true
+    tableName: 'users',
+    freezeTableName: true
 }
 )
 

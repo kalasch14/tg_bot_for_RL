@@ -11,8 +11,6 @@ const UserModel = require('./models/user')
 const config = require('config')
 const { Keyboard } = require("telegram-keyboard")
 
-const bot = new Telegraf(config.get('token'))
-
 const ScenesGenerator = require('./Scenes')
 
 const curScene = new ScenesGenerator()
@@ -23,13 +21,21 @@ const deadlineScene = curScene.DeadlineGen()
 const isOkScene = curScene.IsOkGen()
 const outboundScene = curScene.OutboundGen()
 const incomingScene = curScene.IncomingGen()
+const doneScene = curScene.DoneGen()
+
+
 //import { getMainMenu } from './keyboards.js'
 
 //const getMainMenu = require('./keyboards.js')
 
+
+
+const bot = new Telegraf(config.get('token'))
+
+
 bot.use(Telegraf.log())
 
-
+bot.use(session())
 
 
 
@@ -40,10 +46,11 @@ const stage = new Stage([
     deadlineScene, 
     isOkScene, 
     outboundScene,
-    incomingScene
+    incomingScene,
+    doneScene
 ])
 
-bot.use(session())
+
 bot.use(stage.middleware())
 
 
@@ -51,17 +58,29 @@ bot.use(stage.middleware())
 
 bot.start( async (ctx) => {
 
+    // ctx.session.dataStorage = {
+    //     priority: null,
+    //     task: null,
+    //     deadline: null,
+    //     worker: null,
+    //     flag: 0
+    // }
+
     //const chatId = ctx.chat.id
+
     try {
     
-
         await sequelize.authenticate()
         await sequelize.sync()
+
         let name = ''
+
         if(ctx.chat.last_name == undefined){
             name = ctx.chat.first_name
         } else name = `${ctx.chat.last_name} ${ctx.chat.first_name}`
 
+
+    
 
         await UserModel.create({
 
@@ -73,10 +92,6 @@ bot.start( async (ctx) => {
 
         })
 
-        //await UserModel.create({chatId})
-
-        
-
     } catch (e) {
         console.log(e);
     }
@@ -84,7 +99,7 @@ bot.start( async (ctx) => {
     ctx.reply('👋')
     const keyboard = Keyboard.make([
         ['Входящие задания', 'Исходящие задания'],
-        ['Поставить задание', 'Информация'],
+        ['Поставить задание', 'Выполненные задания'],
       ])
 
     //ctx.scene.enter('task')
@@ -120,8 +135,22 @@ bot.hears('Исходящие задания', async (ctx) => ctx.scene.enter('o
 
 //})
 
-bot.hears('Поставить задание', async (ctx) => ctx.scene.enter('task'))
+bot.hears('Поставить задание', async (ctx) => {
 
+    ctx.session.dataStorage = {
+        priority: null,
+        task: null,
+        deadline: null,
+        worker: null,
+        flag: 0
+    }
+
+    ctx.scene.enter('task')
+})
+
+
+
+bot.hears('Выполненные задания', async (ctx) => ctx.scene.enter('done'))
 
 
 

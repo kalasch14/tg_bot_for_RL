@@ -1,29 +1,33 @@
 
 const {
     Telegraf,
+    session,
     Scenes: { BaseScene, Stage }
 } = require("telegraf");
 
 const UserModel = require('./models/user')
 const TaskModel = require('./models/task')
-
 const { Keyboard, Key } = require("telegram-keyboard")
 
 
 
 class ScenesGenerator {
+    //Описание задания
+    // constructor(task, worker, priority, deadline, user, flag){
+    //     this.task = task
+    //     this.worker = worker
+    //     this.priority = priority
+    //     this.deadline = deadline
+    //     this.user = user // сотрудник, ответственный за выполнения задания
+    //     this.flag = flag // сделано или нет
+    // }
+    
 
-//Описание задания
-    constructor(task, worker, priority, deadline, user, flag){
-        this.task = task
-        this.worker = worker
-        this.priority = priority
-        this.deadline = deadline
-        this.user = user
-        this.flag = flag
-    }
+    //---------------------------------------------------------------
 
+    //Текст задания
 
+    //---------------------------------------------------------------
 
     TaskGen() {
         const task = new BaseScene('task')
@@ -34,7 +38,9 @@ class ScenesGenerator {
             const currentTask = String(ctx.message.text)
 
             if(currentTask){
-                this.task = currentTask
+                ctx.session.dataStorage.task = currentTask
+                
+                //this.task = currentTask
                 ctx.scene.enter('worker')
             }
         })
@@ -47,7 +53,11 @@ class ScenesGenerator {
     }
 
 
-//Выбор ответственного лица
+    //---------------------------------------------------------------
+
+    //Выбор ответственного лица
+
+    //---------------------------------------------------------------
 
     WorkerGen(){
         
@@ -61,26 +71,26 @@ class ScenesGenerator {
 
             const currentWorker = String(ctx.message.text)
 
-             this.user = await UserModel.findOne({
+            ctx.session.dataStorage.user = await UserModel.findOne({
                 where: {
                     username: currentWorker
                 }
             })
 
-            if(this.user == null){
-                this.user = await UserModel.findOne({
+            if(ctx.session.dataStorage.user == null){
+                ctx.session.dataStorage.user = await UserModel.findOne({
                     where: {
                         fullName: currentWorker
                     }
                 })
             } 
-            if(this.user == null) {
+            if(ctx.session.dataStorage.user == null) {
                 await ctx.reply('Пользователь с таким именем или никнеймом не найден!')
                 ctx.scene.reenter()
-            } else this.flag = 1
+            } else ctx.session.dataStorage.flag = 1
 
-            if(this.flag == 1){
-                this.flag = 0
+            if(ctx.session.dataStorage.flag == 1){
+                ctx.session.dataStorage.flag = 0
                 //this.worker = currentWorker
                 ctx.scene.enter('priority')
             }
@@ -93,11 +103,11 @@ class ScenesGenerator {
         return worker
     }
 
-//---------------------------------------------------------------
+    //---------------------------------------------------------------
 
-//Выбор уровня важности
+    //Выбор уровня важности
 
-//--------------------------------------------------------------
+    //--------------------------------------------------------------
 
     PriorityGen(){
         const priority = new BaseScene('priority')
@@ -113,7 +123,7 @@ class ScenesGenerator {
             const priorityLevel = String(ctx.callbackQuery.data)
 
             if(priorityLevel){
-                this.priority = priorityLevel
+                ctx.session.dataStorage.priority = priorityLevel
                 ctx.scene.enter('deadline')
             }
         })
@@ -129,48 +139,50 @@ class ScenesGenerator {
 
     
 
-//---------------------------------------------------------------
+    //---------------------------------------------------------------
 
-//Дедлайн задания
+    //Дедлайн задания
 
-//--------------------------------------------------------------
+    //--------------------------------------------------------------
 
     DeadlineGen(){
         const deadline = new BaseScene('deadline')
 
         deadline.enter(async (ctx) => {
-            await ctx.reply('Дедлайн задания')
+            await ctx.reply('Введите дедлайн задания в формате гггг.мм.дд')
         })
 
         deadline.on('text', async (ctx) => {
-            const dl = String(ctx.message.text)
 
-            // let user = await UserModel.findOne({
-            //     where: {
-            //         username: this.worker
-            //     }
-            // })
 
-            // if(user == null){
-            //     user = await UserModel.findOne({
-            //         where: {
-            //             fullName: this.worker
-            //         }
-            //     })
-            // } else {
-            //     ctx.reply('Пользователь с таким именем или никнеймом не найден!')
-            //     ctx.scene.reenter()
-            // }
+            let dl = String(ctx.message.text)
 
             
+            dl = dl.split('.')
 
-            if(dl){
-                this.deadline = dl
+            // for(let i = 0; i < 3; i++ ){
+            //     if(dl[i] == undefined || parseInt(dl[i]) == NaN){
+            //         ctx.scene.reenter()
+            //     }
+            // }
+
+            dl = new Date(Date.UTC(dl[0], dl[1]-1, dl[2]));
+
+            if(dl == "Invalid Date"){
+                ctx.scene.reenter()
+            } else ctx.session.dataStorage.flag = 1
+
+            if(ctx.session.dataStorage.flag == 1){}
+
+
+            if(ctx.session.dataStorage.flag == 1){
+                ctx.session.dataStorage.flag = 0
+                ctx.session.dataStorage.deadline = dl
                 await ctx.reply(`
-                \nЗадание: ${ this.task }
-                \nИсполнитель: ${ this.user.fullName }
-                \nПриоритет: ${ this.priority }
-                \nДедлайн: ${ this.deadline }
+                \nЗадание: ${ ctx.session.dataStorage.task }
+                \nИсполнитель: ${ ctx.session.dataStorage.user.fullName }
+                \nПриоритет: ${ ctx.session.dataStorage.priority }
+                \nДедлайн: ${ ctx.session.dataStorage.deadline }
                 `)
                 //await TaskModel.create({ priority: this.priority, dateEnd: this.deadline, worker: this.worker, text: this.task, initiator: ctx.from.id, isDone: false})
                 //ctx.scene.leave()
@@ -178,20 +190,20 @@ class ScenesGenerator {
             }
         })
 
-        deadline.on('message', (ctx) => {
-            ctx.reply('Не понял, попробуй еще раз')
-            ctx.scene.reenter()
-        })
+        // deadline.on('message', (ctx) => {
+        //     ctx.reply('Не понял, попробуй еще раз')
+        //     ctx.scene.reenter()
+        // })
         return deadline
 
     }
 
 
-//---------------------------------------------------------------
+    //---------------------------------------------------------------
 
-//проверяем задание на правильность
+    //проверяем задание на правильность
 
-//--------------------------------------------------------------
+    //--------------------------------------------------------------
 
 
     IsOkGen(){
@@ -207,62 +219,46 @@ class ScenesGenerator {
             const ok = String(ctx.callbackQuery.data)
 
             if(ok === '✅'){
-                // let user = await UserModel.findOne({
-                //     where: {
-                //         username: this.worker
-                //     }
-                // })
-
-                // if(user == null){
-                //     user = await UserModel.findOne({
-                //         where: {
-                //             fullName: this.worker
-                //         }
-                //     })
-                // }
 
                 await TaskModel.create({
 
-                    priority: this.priority,
-                    dateEnd: this.deadline,
-                    worker: this.user.fullName,
-                    text: this.task,
+                    priority: ctx.session.dataStorage.priority,
+                    dateEnd: ctx.session.dataStorage.deadline,
+                    worker: ctx.session.dataStorage.user.fullName,
+                    text: ctx.session.dataStorage.task,
                     initiator: ctx.from.id,
                     isDone: false,
-                    chatId: this.user.chatId
+                    chatId: ctx.session.dataStorage.user.chatId
                     
                 })
-                // .catch(function(err) {
-                //     // print the error details
-                
-                // });
 
                 ctx.reply('Готово!')
 
                 let sender = ''
+
                 if(!ctx.from.last_name){
                     sender = ctx.from.first_name
                 } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
 
-                ctx.telegram.sendMessage(this.user.chatId, `
+                ctx.telegram.sendMessage(ctx.session.dataStorage.user.chatId, `
                 \nНовое задание от ${sender}
-                \nЗадание: ${ this.task }
-                \nИсполнитель: ${ this.user.fullName }
-                \nПриоритет: ${ this.priority }
-                \nДедлайн: ${ this.deadline }
+                \nЗадание: ${ ctx.session.dataStorage.task }
+                \nИсполнитель: ${ ctx.session.dataStorage.user.fullName }
+                \nПриоритет: ${ ctx.session.dataStorage.priority }
+                \nДедлайн: ${ ctx.session.dataStorage.deadline }
                 `)
 
                 ctx.scene.leave()
 
             } else if(ok === '❌'){
                
-                
                 await ctx.reply('Повторим')
+
                 ctx.scene.enter('task')
+
             }
         })
     
-
 
         isOk.on('message', (ctx) => {
             ctx.reply('Не понял, попробуй еще раз')
@@ -271,25 +267,24 @@ class ScenesGenerator {
         return isOk
     }
 
-//---------------------------------------------------------------
+    //---------------------------------------------------------------
 
-//Исходящие задания
+    //Исходящие задания
 
-//--------------------------------------------------------------
+    //--------------------------------------------------------------
 
 
     OutboundGen(){
+
         const outbound = new BaseScene('outbound')
         
         outbound.enter(async (ctx) => {
-            
             
             const task = await TaskModel.findAll({
                 where: {
                     initiator: ctx.from.id
                 }
             })
-
 
             if(task.length == 0){
                 await ctx.reply('Нету исходящих заданий')
@@ -319,166 +314,201 @@ class ScenesGenerator {
             }
         })
 
-                    outbound.on('callback_query', async (ctx) => {
+        outbound.on('callback_query', async (ctx) => {
+
             
-                        
-                        if(ctx.callbackQuery.data){
-                            try {
-    
-                                TaskModel.destroy({
-                                    where: {
-                                        id: ctx.callbackQuery.data
-                                    }
-                                })
-                                await ctx.reply('Задание Удалено!')
-                                ctx.scene.enter('outbound')
-                                //ctx.scene.leave()
-                        
-                            } catch (e) {
-                                console.log(e);
-                            }
-            
-                            //await ctx.scene.leave()
-                        } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
-                        ctx.scene.leave()
+            if(ctx.callbackQuery.data){
+                try {
+
+                    TaskModel.destroy({
+                        where: {
+                            id: ctx.callbackQuery.data
+                        }
                     })
+                    await ctx.reply('Задание Удалено!')
+                    ctx.scene.enter('outbound')
+                    //ctx.scene.leave()
+            
+                } catch (e) {
+                    console.log(e);
+                }
 
-
+                //await ctx.scene.leave()
+            } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
+            ctx.scene.leave()
+        })
     
         return outbound
 
     }
 
-//---------------------------------------------------------------
+    //---------------------------------------------------------------
 
-//Входящие задания
+    //Входящие задания
 
-//--------------------------------------------------------------
+    //--------------------------------------------------------------
 
-IncomingGen(){
-    const incoming = new BaseScene('incoming')
-     
-    incoming.enter(async (ctx) => {
+    IncomingGen(){
+        const incoming = new BaseScene('incoming')
         
-        const incomingTask = await TaskModel.findAll({
-            where: {
-                chatId: ctx.from.id,
-                isDone: false
+        incoming.enter(async (ctx) => {
+            ctx.reply(ctx.from.id)
+            
+            const incomingTask = await TaskModel.findAll({
+                where: {
+                    chatId: ctx.from.id,
+                    isDone: false
+                }
+            })
+
+
+            if(incomingTask.length == 0){
+                //await ctx.reply(ctx.from.id)
+                await ctx.reply('Нету активных входящих заданий')
+            } else {
+
+                await ctx.reply('Входящие задания: ')
+
+                for(let i = 0; i < incomingTask.length; i++){
+
+            
+                    const doneKeyboard = Keyboard.make([
+                        [Key.callback('Отметить Выполненым', incomingTask[i].dataValues.id)],
+                    ]).inline()
+
+                    const user = await UserModel.findOne({
+                        where: {
+                            chatId: incomingTask[i].dataValues.initiator,
+                        }
+                    })
+
+
+                    await ctx.reply(`
+                        \nЗадание: ${incomingTask[i].dataValues.text},
+                        \nИнициатор: ${user.fullName},
+                        \nПриоритет: ${incomingTask[i].dataValues.priority},
+                        \nДедлайн: ${incomingTask[i].dataValues.dateEnd},
+                        \nВыполнено: ${incomingTask[i].dataValues.isDone},
+                        \nВремя Создания: ${incomingTask[i].dataValues.createdAt}
+                    `,
+                    doneKeyboard)
+                    
+            
+                }
+                
             }
         })
 
-
-        if(incomingTask.length == 0){
-            //await ctx.reply(ctx.from.id)
-            await ctx.reply('Нету активных входящих заданий')
-        } else {
-
-            await ctx.reply('Входящие задания: ')
-
-            for(let i = 0; i < incomingTask.length; i++){
-
-        
-                const doneKeyboard = Keyboard.make([
-                    [Key.callback('Отметить Выполненым', incomingTask[i].dataValues.id)],
-                ]).inline()
-
-                const user = await UserModel.findAll({
-                    where: {
-                        chatId: ctx.from.id
-                    }
-                })
-
-
-                await ctx.reply(`
-                    \nЗадание: ${incomingTask[i].dataValues.text},
-                    \nИнициатор: ${incomingTask[i].dataValues.worker},
-                    \nПриоритет: ${incomingTask[i].dataValues.priority},
-                    \nДедлайн: ${incomingTask[i].dataValues.dateEnd},
-                    \nВыполнено: ${incomingTask[i].dataValues.isDone},
-                    \nВремя Создания: ${incomingTask[i].dataValues.createdAt}
-                `,
-                doneKeyboard)
+        incoming.on('callback_query', async (ctx) => {
                 
-        
-            }
+                            
+            if(ctx.callbackQuery.data){
+                try {
+
+                    const incomingTask = await TaskModel.findOne({
+                        where: {
+                            id: ctx.callbackQuery.data
+                        }
+                    })
+
+                    incomingTask.isDone = true
+
+                    await incomingTask.save();
+                    await ctx.reply('Инициатору отправлено сообщение о выполнении!')
+
+                    let sender = ''
+                    if(!ctx.from.last_name){
+                        sender = ctx.from.first_name
+                    } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
+
+                    ctx.telegram.sendMessage(incomingTask.initiator, `
+                    \n${incomingTask.worker} выполнил задание!
+                    \nЗадание: ${ incomingTask.text }
+                    \nПриоритет: ${ incomingTask.priority }
+                    \nДедлайн: ${ incomingTask.dateEnd }
+                    `)
+
+                    // ctx.scene.enter('outbound')
+                    //ctx.scene.leave()
             
-        }
-    })
+                } catch (e) {
+                    console.log(e);
+                }
+
+                //await ctx.scene.leave()
+            } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
+            ctx.scene.leave()
+        })
+
+        return incoming
+
+    }
 
 
-    incoming.on('callback_query', async (ctx) => {
+    //---------------------------------------------------------------
+
+    //Выполненные задания задания
+
+    //--------------------------------------------------------------
+
+    DoneGen(){
+
+        const done = new BaseScene('done')
+
+        done.enter(async (ctx) => {
+
+            const doneTask = await TaskModel.findAll({
+                where: {
+                    chatId: ctx.from.id,
+                    isDone: true
+                }
+            })
+
+
+            if(doneTask.length == 0){
+                //await ctx.reply(ctx.from.id)
+                await ctx.reply('Нету активных входящих заданий')
+            } else {
+
+                await ctx.reply('Список выполненых заданий')
+
+                for(let i = 0; i < doneTask.length; i++){
+
+
+                    const user = await UserModel.findOne({
+                        where: {
+                            chatId: doneTask[i].dataValues.initiator,
+                        }
+                    })
+
+
+                    await ctx.reply(`
+                        \nЗадание: ${doneTask[i].dataValues.text},
+                        \nИнициатор: ${user.fullName},
+                        \nПриоритет: ${doneTask[i].dataValues.priority},
+                        \nДедлайн: ${doneTask[i].dataValues.dateEnd},
+                        \nВыполнено: ${doneTask[i].dataValues.isDone},
+                        \nВремя Создания: ${doneTask[i].dataValues.createdAt}
+                    `)
+                    
             
-                        
-        if(ctx.callbackQuery.data){
-            try {
+                }
 
-                const incomingTask = await TaskModel.findOne({
-                    where: {
-                        id: ctx.callbackQuery.data
-                    }
-                })
-
-                incomingTask.isDone = true
-
-                await incomingTask.save();
-                await ctx.reply('Инициатору отправлено сообщение о выполнении!')
-
-                let sender = ''
-                if(!ctx.from.last_name){
-                    sender = ctx.from.first_name
-                } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
-
-                ctx.telegram.sendMessage(incomingTask.initiator, `
-                \n${incomingTask.worker} выполнил задание!
-                \nЗадание: ${ incomingTask.text }
-                \nПриоритет: ${ incomingTask.priority }
-                \nДедлайн: ${ incomingTask.dateEnd }
-                `)
-
-
-                // ctx.scene.enter('outbound')
-                //ctx.scene.leave()
-        
-            } catch (e) {
-                console.log(e);
             }
 
-            //await ctx.scene.leave()
-        } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
-        ctx.scene.leave()
-    })
+        })
 
-    // incoming.on('callback_query', async (ctx) => {
-        
-                    
-    //                 if(ctx.callbackQuery.data){
-    //                     try {
+        return done
 
-    //                         TaskModel.destroy({
-    //                             where: {
-    //                                 id: ctx.callbackQuery.data
-    //                             }
-    //                         })
-    //                         await ctx.reply('Задание Удалено!')
-    //                         ctx.scene.enter('outbound')
-    //                         //ctx.scene.leave()
-                    
-    //                     } catch (e) {
-    //                         console.log(e);
-    //                     }
-        
-    //                     //await ctx.scene.leave()
-    //                 } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
-    //                 ctx.scene.leave()
-    //             })
+    }
 
-
-
-    return incoming
 
 }
 
-}
+
+
+//keyboards
+
     
 const priorityKeyboard = Keyboard.make([
     [Key.callback('Высоко','Высоко')],

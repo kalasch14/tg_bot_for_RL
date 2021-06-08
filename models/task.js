@@ -29,7 +29,7 @@ const Task = sequelize.define('task', {
         defaultValue: false
     },
     dateEnd : {
-        type: DataTypes.STRING
+        type: DataTypes.DATE
     },
     
 },

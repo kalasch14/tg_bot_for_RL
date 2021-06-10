@@ -23,6 +23,8 @@ const outboundScene = curScene.OutboundGen()
 const incomingScene = curScene.IncomingGen()
 const doneScene = curScene.DoneGen()
 
+let cron = require('node-cron');
+
 
 //import { getMainMenu } from './keyboards.js'
 
@@ -154,6 +156,30 @@ bot.hears('Выполненные задания', async (ctx) => ctx.scene.ente
 
 
 
+
+
 bot.launch()
+
+
+
+
+
+cron.schedule('*/1 * * * *', () => {
+
+     
+        try {
+        let usersList = UserModel.findAll()
+        .then(usersList => {
+            for(let i = 0; i < usersList.length; i++){
+                bot.telegram.sendMessage(usersList[i].chatId, "test")
+            }
+        })
+        console.log(usersList);
+
+        } catch (e){
+            console.log(e);
+        }
+    
+});
 
 

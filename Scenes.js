@@ -7,22 +7,13 @@ const {
 
 const UserModel = require('./models/user')
 const TaskModel = require('./models/task')
-const { Keyboard, Key } = require("telegram-keyboard")
+const { Keyboard, Key } = require("telegram-keyboard");
+const { Sequelize } = require("sequelize");
 
 
 
 class ScenesGenerator {
-    //Описание задания
-    // constructor(task, worker, priority, deadline, user, flag){
-    //     this.task = task
-    //     this.worker = worker
-    //     this.priority = priority
-    //     this.deadline = deadline
-    //     this.user = user // сотрудник, ответственный за выполнения задания
-    //     this.flag = flag // сделано или нет
-    // }
     
-
     //---------------------------------------------------------------
 
     //Текст задания
@@ -32,18 +23,25 @@ class ScenesGenerator {
     TaskGen() {
         const task = new BaseScene('task')
         task.enter(async (ctx) => {
-            await ctx.reply('Укажи задание к исполнению')
+            await ctx.reply(`
+            \nУкажи задание к исполнению
+            \nДля отмены создания задания нажмите "/"
+            `)
         })
         task.on('text', async (ctx) => {
             const currentTask = String(ctx.message.text)
 
-            if(currentTask){
+
+            if(ctx.message.text !== '/'){
                 ctx.session.dataStorage.task = currentTask
-                
                 //this.task = currentTask
                 ctx.scene.enter('worker')
+            } else {
+                ctx.reply('Задание отменено!')
+                ctx.scene.leave()
             }
         })
+
         task.on('message', (ctx) => {
             ctx.reply('Не понял, попробуй еще раз')
             ctx.scene.reenter()
@@ -64,42 +62,100 @@ class ScenesGenerator {
         const worker = new BaseScene('worker')
 
         worker.enter(async (ctx) => {
-            await ctx.reply('Укажи ответственного сотрудника')
-        })
+            await ctx.reply('Выберите исполнителя:')
 
-        worker.on('text', async (ctx) => {
-
-            const currentWorker = String(ctx.message.text)
-
-            ctx.session.dataStorage.user = await UserModel.findOne({
+            const usersList = await UserModel.findAll({
                 where: {
-                    username: currentWorker
+                    chatId: {
+                        [Sequelize.Op.not]: ctx.message.from.id 
+                    }
                 }
             })
 
-            if(ctx.session.dataStorage.user == null){
+            for(let i = 0; i < usersList.length; i++){
+                const userListKeyboard = Keyboard.make([
+                    [Key.callback('👨🏻', usersList[i].chatId)]
+                  ]).inline()
+                await ctx.reply(usersList[i].fullName ,userListKeyboard)
+            }
+
+        })
+
+        worker.on('callback_query', async (ctx) => {
+            
+            const uid = ctx.callbackQuery.data
+
                 ctx.session.dataStorage.user = await UserModel.findOne({
                     where: {
-                        fullName: currentWorker
+                        chatId: uid
                     }
                 })
-            } 
-            if(ctx.session.dataStorage.user == null) {
-                await ctx.reply('Пользователь с таким именем или никнеймом не найден!')
-                ctx.scene.reenter()
-            } else ctx.session.dataStorage.flag = 1
 
-            if(ctx.session.dataStorage.flag == 1){
-                ctx.session.dataStorage.flag = 0
-                //this.worker = currentWorker
+                
                 ctx.scene.enter('priority')
-            }
+            
         })
 
         worker.on('message', (ctx) => {
+            if (ctx.message.text == '/') {
+                ctx.reply('Задание отменено!')
+                ctx.scene.leave()
+            } else {
             ctx.reply('Не понял, попробуй еще раз')
             ctx.scene.reenter()
+            }
         })
+
+
+
+        //старый вариант-----------------------------------------------------------------------------
+
+        // worker.enter(async (ctx) => {
+        //     await ctx.reply('Укажите ответственного сотрудника')
+        // })
+
+        // worker.on('text', async (ctx) => {
+
+        //     const currentWorker = String(ctx.message.text)
+
+            
+
+            // ctx.session.dataStorage.user = await UserModel.findOne({
+            //     where: {
+            //         username: currentWorker
+            //     }
+            // })
+
+            // if(ctx.session.dataStorage.user == null){
+            //     ctx.session.dataStorage.user = await UserModel.findOne({
+            //         where: {
+            //             fullName: currentWorker
+            //         }
+            //     })
+            // }
+
+        //     if(ctx.message.text == '/'){
+        //         ctx.reply('Задание отменено!')
+        //         ctx.scene.leave()
+        //     } else if(ctx.session.dataStorage.user == null) {
+        //         await ctx.reply('Пользователь с таким именем или никнеймом не найден!')
+        //         ctx.scene.reenter()
+        //     } else ctx.session.dataStorage.flag = 1
+
+        //     if(ctx.session.dataStorage.flag == 1){
+        //         ctx.session.dataStorage.flag = 0
+        //         //this.worker = currentWorker
+        //         ctx.scene.enter('priority')
+        //     }
+        // })
+
+        // worker.on('message', (ctx) => {
+        //     ctx.reply('Не понял, попробуй еще раз')
+        //     ctx.scene.reenter()
+        // })
+
+        //---------------------------------------------------------------------------------------------
+
         return worker
     }
 
@@ -116,6 +172,13 @@ class ScenesGenerator {
             await ctx.reply('Определим важность задания', priorityKeyboard)
         })
 
+
+        priority.on('text', async (ctx) => {
+            if(ctx.message.text == '/'){
+                ctx.reply('Задание отменено!')
+                ctx.scene.leave()
+            }
+        })
     
 
         priority.on('callback_query', async (ctx) => {
@@ -146,54 +209,60 @@ class ScenesGenerator {
     //--------------------------------------------------------------
 
     DeadlineGen(){
+        
         const deadline = new BaseScene('deadline')
+
+
 
         deadline.enter(async (ctx) => {
             await ctx.reply('Введите дедлайн задания в формате гггг.мм.дд')
+            ctx.session.dataStorage.flag = 0
         })
 
         deadline.on('text', async (ctx) => {
+            ctx.session.dataStorage.flag = 0
+            let enteredDate = String(ctx.message.text)
 
-
-            let dl = String(ctx.message.text)
-
-            
-            dl = dl.split('.')
-
-            // for(let i = 0; i < 3; i++ ){
-            //     if(dl[i] == undefined || parseInt(dl[i]) == NaN){
-            //         ctx.scene.reenter()
-            //     }
-            // }
-
-            dl = new Date(Date.UTC(dl[0], dl[1]-1, dl[2]));
-
-            if(dl == "Invalid Date"){
-                ctx.scene.reenter()
-            } else ctx.session.dataStorage.flag = 1
-
-            if(ctx.session.dataStorage.flag == 1){}
-
-
-            if(ctx.session.dataStorage.flag == 1){
-                ctx.session.dataStorage.flag = 0
-                ctx.session.dataStorage.deadline = dl
-                await ctx.reply(`
-                \nЗадание: ${ ctx.session.dataStorage.task }
-                \nИсполнитель: ${ ctx.session.dataStorage.user.fullName }
-                \nПриоритет: ${ ctx.session.dataStorage.priority }
-                \nДедлайн: ${ ctx.session.dataStorage.deadline }
-                `)
-                //await TaskModel.create({ priority: this.priority, dateEnd: this.deadline, worker: this.worker, text: this.task, initiator: ctx.from.id, isDone: false})
-                //ctx.scene.leave()
-                ctx.scene.enter('isOk')
+            if(enteredDate == '/'){
+                await ctx.reply('Задание отменено!')
+                ctx.session.dataStorage.flag = 1
+                await ctx.scene.leave()
             }
-        })
 
-        // deadline.on('message', (ctx) => {
-        //     ctx.reply('Не понял, попробуй еще раз')
-        //     ctx.scene.reenter()
-        // })
+            enteredDate = enteredDate.split('.')
+
+            enteredDate = new Date(Date.UTC(enteredDate[0], enteredDate[1]-1, enteredDate[2]))
+
+            let currDate = 1623306421000
+
+
+            if (enteredDate == "Invalid Date" && ctx.session.dataStorage.flag == 0) {
+
+                await ctx.reply('Введен неверный формат!1').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
+                
+                
+                
+            } 
+            
+            if (ctx.session.dataStorage.flag == 0 && (Date.parse(enteredDate) <  currDate) && enteredDate != "Invalid Date"){
+                await ctx.reply('Введен неверный формат!2').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
+                
+            } else if(ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
+                        ctx.session.dataStorage.deadline = enteredDate
+                        await ctx.reply(`
+                        \nЗадание: ${ ctx.session.dataStorage.task }
+                        \nИсполнитель: ${ ctx.session.dataStorage.user.fullName }
+                        \nПриоритет: ${ ctx.session.dataStorage.priority }
+                        \nДедлайн: ${ ctx.session.dataStorage.deadline }
+                        `)
+                        ctx.scene.enter('isOk')
+                    } else if (ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
+                        await ctx.reply('Введен неверный формат!3').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
+                    }
+
+        })
+            
+
         return deadline
 
     }
@@ -327,14 +396,12 @@ class ScenesGenerator {
                     })
                     await ctx.reply('Задание Удалено!')
                     ctx.scene.enter('outbound')
-                    //ctx.scene.leave()
             
                 } catch (e) {
                     console.log(e);
                 }
 
-                //await ctx.scene.leave()
-            } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
+            } else await ctx.reply('err')
             ctx.scene.leave()
         })
     
@@ -352,8 +419,7 @@ class ScenesGenerator {
         const incoming = new BaseScene('incoming')
         
         incoming.enter(async (ctx) => {
-            ctx.reply(ctx.from.id)
-            
+        
             const incomingTask = await TaskModel.findAll({
                 where: {
                     chatId: ctx.from.id,
@@ -428,15 +494,13 @@ class ScenesGenerator {
                     \nДедлайн: ${ incomingTask.dateEnd }
                     `)
 
-                    // ctx.scene.enter('outbound')
-                    //ctx.scene.leave()
             
                 } catch (e) {
                     console.log(e);
                 }
 
                 //await ctx.scene.leave()
-            } else await ctx.reply('AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAa')
+            } else await ctx.reply('err')
             ctx.scene.leave()
         })
 

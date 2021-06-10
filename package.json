@@ -13,6 +13,7 @@
     "config": "^3.3.6",
     "mongodb": "^3.6.9",
     "mongoose": "^5.12.12",
+    "node-cron": "^3.0.0",
     "node-telegram-bot-api": "^0.53.0",
     "nodemon": "^2.0.7",
     "pg": "^8.6.0",

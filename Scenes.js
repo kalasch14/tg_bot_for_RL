@@ -233,19 +233,19 @@ class ScenesGenerator {
 
             enteredDate = new Date(Date.UTC(enteredDate[0], enteredDate[1]-1, enteredDate[2]))
 
-            let currDate = 1623306421000
+            let currDate = Date.parse(new Date)
 
 
             if (enteredDate == "Invalid Date" && ctx.session.dataStorage.flag == 0) {
 
-                await ctx.reply('Введен неверный формат!1').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
+                await ctx.reply('Введен неверный формат!').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
                 
                 
                 
             } 
             
             if (ctx.session.dataStorage.flag == 0 && (Date.parse(enteredDate) <  currDate) && enteredDate != "Invalid Date"){
-                await ctx.reply('Введен неверный формат!2').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
+                await ctx.reply('Введен неверный формат!').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
                 
             } else if(ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
                         ctx.session.dataStorage.deadline = enteredDate
@@ -257,7 +257,7 @@ class ScenesGenerator {
                         `)
                         ctx.scene.enter('isOk')
                     } else if (ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
-                        await ctx.reply('Введен неверный формат!3').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
+                        await ctx.reply('Введен неверный формат!').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
                     }
 
         })

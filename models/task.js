@@ -28,6 +28,10 @@ const Task = sequelize.define('task', {
         type: DataTypes.BOOLEAN,
         defaultValue: false
     },
+    isFailed: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
+    },
     dateEnd : {
         type: DataTypes.DATE
     },

@@ -1,8 +1,6 @@
 
 const {
-    Telegraf,
-    session,
-    Scenes: { BaseScene, Stage }
+    Scenes: { BaseScene }
 } = require("telegraf");
 
 const UserModel = require('./models/user')
@@ -10,7 +8,8 @@ const TaskModel = require('./models/task')
 const { Keyboard, Key } = require("telegram-keyboard");
 const { Sequelize } = require("sequelize");
 
-
+const parseDate = require('./middleware/parseDate')
+const isDone = require('./middleware/isDone')
 
 class ScenesGenerator {
     
@@ -240,8 +239,6 @@ class ScenesGenerator {
 
                 await ctx.reply('Введен неверный формат!').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
                 
-                
-                
             } 
             
             if (ctx.session.dataStorage.flag == 0 && (Date.parse(enteredDate) <  currDate) && enteredDate != "Invalid Date"){
@@ -253,7 +250,7 @@ class ScenesGenerator {
                         \nЗадание: ${ ctx.session.dataStorage.task }
                         \nИсполнитель: ${ ctx.session.dataStorage.user.fullName }
                         \nПриоритет: ${ ctx.session.dataStorage.priority }
-                        \nДедлайн: ${ ctx.session.dataStorage.deadline }
+                        \nДедлайн: ${ parseDate(ctx.session.dataStorage.deadline) }
                         `)
                         ctx.scene.enter('isOk')
                     } else if (ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
@@ -297,7 +294,8 @@ class ScenesGenerator {
                     text: ctx.session.dataStorage.task,
                     initiator: ctx.from.id,
                     isDone: false,
-                    chatId: ctx.session.dataStorage.user.chatId
+                    chatId: ctx.session.dataStorage.user.chatId,
+                    initiatorName: ctx.from.first_name + ' ' + ctx.from.last_name
                     
                 })
 
@@ -314,7 +312,7 @@ class ScenesGenerator {
                 \nЗадание: ${ ctx.session.dataStorage.task }
                 \nИсполнитель: ${ ctx.session.dataStorage.user.fullName }
                 \nПриоритет: ${ ctx.session.dataStorage.priority }
-                \nДедлайн: ${ ctx.session.dataStorage.deadline }
+                \nДедлайн: ${ parseDate(ctx.session.dataStorage.deadline) }
                 `)
 
                 ctx.scene.leave()
@@ -373,9 +371,9 @@ class ScenesGenerator {
                         \nЗадание: ${task[i].dataValues.text},
                         \nИсполнитель: ${task[i].dataValues.worker},
                         \nПриоритет: ${task[i].dataValues.priority},
-                        \nДедлайн: ${task[i].dataValues.dateEnd},
-                        \nВыполнено: ${task[i].dataValues.isDone},
-                        \nВремя Создания: ${task[i].dataValues.createdAt}
+                        \nДедлайн: ${parseDate(task[i].dataValues.dateEnd)},
+                        \nВыполнено: ${isDone(task[i].dataValues.isDone)},
+                        \nДата Создания: ${parseDate(task[i].dataValues.createdAt)}
                     `,
                     deleteKeyboard)
                     
@@ -448,14 +446,15 @@ class ScenesGenerator {
                         }
                     })
 
+                    
 
                     await ctx.reply(`
                         \nЗадание: ${incomingTask[i].dataValues.text},
                         \nИнициатор: ${user.fullName},
                         \nПриоритет: ${incomingTask[i].dataValues.priority},
-                        \nДедлайн: ${incomingTask[i].dataValues.dateEnd},
-                        \nВыполнено: ${incomingTask[i].dataValues.isDone},
-                        \nВремя Создания: ${incomingTask[i].dataValues.createdAt}
+                        \nДедлайн: ${parseDate(incomingTask[i].dataValues.dateEnd)},
+                        \nВыполнено: ${isDone(incomingTask[i].dataValues.isDone)},
+                        \nДата Создания: ${parseDate(incomingTask[i].dataValues.createdAt)}
                     `,
                     doneKeyboard)
                     
@@ -491,7 +490,8 @@ class ScenesGenerator {
                     \n${incomingTask.worker} выполнил задание!
                     \nЗадание: ${ incomingTask.text }
                     \nПриоритет: ${ incomingTask.priority }
-                    \nДедлайн: ${ incomingTask.dateEnd }
+                    \nДедлайн: ${ parseDate(incomingTask.dateEnd) }
+                    \nДата создания: ${ parseDate(incomingTask.createdAt) }
                     `)
 
             
@@ -550,9 +550,9 @@ class ScenesGenerator {
                         \nЗадание: ${doneTask[i].dataValues.text},
                         \nИнициатор: ${user.fullName},
                         \nПриоритет: ${doneTask[i].dataValues.priority},
-                        \nДедлайн: ${doneTask[i].dataValues.dateEnd},
-                        \nВыполнено: ${doneTask[i].dataValues.isDone},
-                        \nВремя Создания: ${doneTask[i].dataValues.createdAt}
+                        \nДедлайн: ${parseDate(doneTask[i].dataValues.dateEnd)},
+                        \nВыполнено: ${isDone(doneTask[i].dataValues.isDone)},
+                        \nДата Создания: ${parseDate(doneTask[i].dataValues.createdAt)}
                     `)
                     
             
@@ -575,9 +575,9 @@ class ScenesGenerator {
 
     
 const priorityKeyboard = Keyboard.make([
-    [Key.callback('Высоко','Высоко')],
-    [Key.callback('Средне','Средне')],
-    [Key.callback('Низко','Низко')],
+    [Key.callback('Высоко','Высоко 🔴')],
+    [Key.callback('Средне','Средне 🟡')],
+    [Key.callback('Низко','Низко 🟢')],
   ]).inline()
 
 

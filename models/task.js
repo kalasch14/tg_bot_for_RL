@@ -12,6 +12,9 @@ const Task = sequelize.define('task', {
     initiator: {
         type: DataTypes.INTEGER
     },
+    initiatorName: {
+        type: DataTypes.STRING
+    },
     priority: {
         type: DataTypes.STRING,
     },
@@ -42,6 +45,6 @@ const Task = sequelize.define('task', {
     tableName: "tasks"
 }
 )
-
+ 
 
 module.exports = Task

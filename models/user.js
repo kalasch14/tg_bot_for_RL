@@ -32,6 +32,14 @@ const User = sequelize.define('user', {
     task: {
         type: DataTypes.BOOLEAN,
         defaultValue: false
+    },
+
+    dept: {
+        type: DataTypes.STRING,
+    },
+
+    position: {
+        type: DataTypes.STRING,
     }
 },
 {

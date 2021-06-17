@@ -10,44 +10,43 @@ const UserModel = require('./models/user')
 const TaskModel = require('./models/task')
 
 const config = require('config')
-const { Keyboard } = require("telegram-keyboard")
 
 
-const ScenesGenerator = require('./Scenes')
+const TaskScenesGenerator = require('./scenes/createTaskScene')
+const LoginScenesGenerator = require('./scenes/loginScenes')
+const OutboundScenesGenerator = require('./scenes/outboundScene')
+const IncomingScenesGenerator = require('./scenes/incomingScene')
+const DoneScenesGenerator = require('./scenes/doneScene')
 
-const curScene = new ScenesGenerator()
-const taskScene = curScene.TaskGen()
-const workerScene = curScene.WorkerGen()
-const priorityScene = curScene.PriorityGen()
-const deadlineScene = curScene.DeadlineGen()
-const isOkScene = curScene.IsOkGen()
-const outboundScene = curScene.OutboundGen()
-const incomingScene = curScene.IncomingGen()
-const doneScene = curScene.DoneGen()
-const loginScene = curScene.LoginGen()
-const helloScene = curScene.HelloGen()
-const deptScene = curScene.DepartGen()
-const posScene = curScene.PositionGen()
+const createTaskScene = new TaskScenesGenerator()
+const logScene = new LoginScenesGenerator()
+const outScene = new OutboundScenesGenerator()
+const inScene = new IncomingScenesGenerator()
+const doneTaskScene = new DoneScenesGenerator()
+
+const taskScene = createTaskScene.TaskGen()
+const workerScene = createTaskScene.WorkerGen()
+const priorityScene = createTaskScene.PriorityGen()
+const deadlineScene = createTaskScene.DeadlineGen()
+const isOkScene = createTaskScene.IsOkGen()
+
+const loginScene = logScene.LoginGen()
+const helloScene = logScene.HelloGen()
+const deptScene = logScene.DepartGen()
+const posScene = logScene.PositionGen()
+
+const doneScene = doneTaskScene.DoneGen()
+
+const outboundScene = outScene.OutboundGen()
+
+const incomingScene = inScene.IncomingGen()
 
 let cron = require('node-cron');
 
-const parseDate = require('./middleware/parseDate')
-//const { where } = require("sequelize/types");
-
-
-//import { getMainMenu } from './keyboards.js'
-
-//const getMainMenu = require('./keyboards.js')
-
+const parseDate = require('./middleware/parseDate');
 
 
 const bot = new Telegraf(config.get('token'))
-
-
-bot.use(Telegraf.log())
-
-bot.use(session())
-
 
 
 const stage = new Stage([
@@ -65,15 +64,12 @@ const stage = new Stage([
     posScene
 ])
 
-
+bot.use(Telegraf.log())
+bot.use(session())
 bot.use(stage.middleware())
 
 
-
-
 bot.start( async (ctx) => {
-
-
 
     try {
     
@@ -100,30 +96,7 @@ bot.start( async (ctx) => {
             }
 
             await ctx.scene.enter('login')
-                // let name = ''
-
-                // if(ctx.chat.last_name == undefined){
-                //     name = ctx.chat.first_name
-                // } else name = `${ctx.chat.last_name} ${ctx.chat.first_name}`
-
-
-            
-
-                // await UserModel.create({
-
-                //     chatId: ctx.chat.id,
-                //     firstName: ctx.chat.first_name,
-                //     lastName: ctx.chat.last_name,
-                //     fullName: name,
-                //     username: ctx.chat.username
-
-                // })
         }
-
-        
-
-        
-
     } catch (e) {
         console.log(e);
     }
@@ -156,10 +129,6 @@ bot.hears('Поставить задание', async (ctx) => {
 
     ctx.scene.enter('task')
 })
-
-
-
-
 
 bot.launch()
 

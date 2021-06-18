@@ -12,6 +12,7 @@ const TaskModel = require('./models/task')
 const config = require('config')
 
 
+
 const TaskScenesGenerator = require('./scenes/createTaskScene')
 const LoginScenesGenerator = require('./scenes/loginScenes')
 const OutboundScenesGenerator = require('./scenes/outboundScene')
@@ -43,8 +44,6 @@ const incomingScene = inScene.IncomingGen()
 
 let cron = require('node-cron');
 
-const parseDate = require('./middleware/parseDate');
-
 
 const bot = new Telegraf(config.get('token'))
 
@@ -68,14 +67,11 @@ bot.use(Telegraf.log())
 bot.use(session())
 bot.use(stage.middleware())
 
-
 bot.start( async (ctx) => {
 
     try {
-    
         await sequelize.authenticate()
         await sequelize.sync()
-
 
 
         let isUserExist = await UserModel.findOne({
@@ -89,7 +85,6 @@ bot.start( async (ctx) => {
             ctx.scene.enter('hello')
 
         } else {
-
             ctx.session.dataStorage = {
                 userDept: null,
                 userPos: null
@@ -133,168 +128,27 @@ bot.hears('Поставить задание', async (ctx) => {
 bot.launch()
 
 
-//Рассылка отданых активных заданий
+//Рассылка входящих активных заданий
+cron.schedule('1 9 * * *', function(){
+    require('./cron/incomingTasksMailing')(bot)
+}, 
+{
+    scheduled: true,
+    timezone: "Europe/Kiev"
+})
 
-cron.schedule('10 9 * * *', async () => { 
-    try {
-        let usersList = UserModel.findAll()
-        .then(async usersList => {
-
-            for(let i = 0; i < usersList.length; i++){
-
-                let activeTasksList = await TaskModel.findAll({
-                    where: {
-                        initiator: usersList[i].chatId,
-                        isDone: false
-                    }
-                })
-               
-                if (activeTasksList.length){
-                    await bot.telegram.sendMessage(usersList[i].chatId,`Список отданых заданий, которые находятся на выполнении:`)
-                }
-
-
-                if (activeTasksList.length != 0){
-                    for(let k = 0; k < activeTasksList.length; k++){
-
-
-                        if (!activeTasksList[k].isFailed) {
-                            await bot.telegram.sendMessage(usersList[i].chatId,`
-                                \nЗадание: ${activeTasksList[k].text},
-                                \nПриоритет: ${activeTasksList[k].priority},
-                                \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)},
-                                \nИсполнитель: ${activeTasksList[k].worker},
-                                \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
-
-                            `)
-                        } else {
-                            await bot.telegram.sendMessage(usersList[i].chatId,`
-                                \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
-                                \nВремя выполнения задания истекло!
-                                \nЗадание: ${activeTasksList[k].text}
-                                \nПриоритет: ${activeTasksList[k].priority}
-                                \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)} просрочен!
-                                \nИсполнитель: ${activeTasksList[k].worker}
-                                \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
-                                \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
-
-                            `)
-                        }
-                    }
-                }
-                flag = 0
-            }
-        })
-        console.log(usersList);
-
-    }
-    catch (e){
-        console.log(e);
-    }
-    
+//Рассылка исходящих заданий
+cron.schedule('0 9 * * *', function(){
+    require('./cron/outcomingTaskMailing')(bot)
 },
 {
     scheduled: true,
     timezone: "Europe/Kiev"
-}
-);
+})
 
 //Проверка на просрочку задания
-
-
-cron.schedule('30 9 * * *', async () => { 
-    try {
-        let usersList = UserModel.findAll()
-        .then(async usersList => {
-            let flag = 1
-            for(let i = 0; i < usersList.length; i++){
-
-
-                let activeTasksList = await TaskModel.findAll({
-                    where: {
-                        chatId: usersList[i].chatId,
-                        isDone: false
-                    }
-                })
-
-
-                if(activeTasksList.length){
-                    await bot.telegram.sendMessage(usersList[i].chatId,`Список полученых заданий, которые находятся на выполнении:`)
-                }
-
-                if (activeTasksList.length != 0){
-                
-
-                    for(let k = 0; k < activeTasksList.length; k++){
-
-
-                        if (!activeTasksList[k].isFailed) {
-                            await bot.telegram.sendMessage(usersList[i].chatId,`
-                                \nЗадание: ${activeTasksList[k].text}
-                                \nПриоритет: ${activeTasksList[k].priority}
-                                \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)}
-                                \nИнициатор: ${activeTasksList[k].initiatorName}
-                                \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
-
-                            `)
-                        } else {
-                            await bot.telegram.sendMessage(usersList[i].chatId,`
-                                \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
-                                \nВремя выполнения задания истекло!
-                                \nЗадание: ${activeTasksList[k].text}
-                                \nПриоритет: ${activeTasksList[k].priority}
-                                \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)} просрочен!
-                                \nИнициатор: ${activeTasksList[k].initiatorName}
-                                \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
-                                \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
-
-                            `)
-                        }
-                    }
-                }
-            }
-        })
-        console.log(usersList);
-
-    }
-    catch (e){
-        console.log(e);
-    }
-    
-},
-{
-    scheduled: true,
-    timezone: "Europe/Kiev"
-}
-);
-
-
-
-cron.schedule('0 5 * * *', async () => {
-    try {
-        TaskModel.findAll({
-            where: {
-                isDone: false
-            }
-        })
-        .then(async (taskList) => {
-
-            for(let l = 0; l < taskList.length; l++){
-                let dateEnd = Date.parse(taskList[l].dateEnd)
-                let dateNow = Date.parse(new Date)
-
-                if(dateNow > dateEnd){
-                    taskList[l].isFailed = true
-                    await taskList[l].save()
-                }
-            }
-
-        })
-
-        
-    } catch(e){
-        console.log(e);
-    }
+cron.schedule('0 5 * * *', function(){
+    require('./cron/failedTaskChecking')(bot)
 },
 {
     scheduled: true,
@@ -302,3 +156,4 @@ cron.schedule('0 5 * * *', async () => {
 })
 
 
+module.exports = bot

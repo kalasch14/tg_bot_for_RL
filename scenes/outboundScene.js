@@ -61,15 +61,16 @@ class OutboundScenesGenerator {
                             id: ctx.callbackQuery.data
                         }
                     })
-                    await ctx.reply('Задание Удалено!')
-                    ctx.scene.enter('outbound')
+
+                    await ctx.editMessageText('Задание Удалено!')
+                    //ctx.scene.enter('outbound')
             
                 } catch (e) {
                     console.log(e);
                 }
 
             } else await ctx.reply('err')
-            ctx.scene.leave()
+            //ctx.scene.leave()
         })
     
         return outbound

@@ -9,7 +9,7 @@ const { Keyboard, Key } = require("telegram-keyboard");
 const { Sequelize } = require("sequelize");
 
 const parseDate = require('../middleware/parseDate')
-const isDone = require('../middleware/isDone')
+
 
 class ScenesGenerator {
     
@@ -60,40 +60,70 @@ class ScenesGenerator {
         
         const worker = new BaseScene('worker')
 
+        
         worker.enter(async (ctx) => {
-            await ctx.reply('Выберите исполнителя:')
-
-            const usersList = await UserModel.findAll({
-                where: {
-                    chatId: {
-                        [Sequelize.Op.not]: ctx.message.from.id 
-                    }
-                }
-            })
-
-            for(let i = 0; i < usersList.length; i++){
-                const userListKeyboard = Keyboard.make([
-                    [Key.callback('👨🏻', usersList[i].chatId)]
-                  ]).inline()
-                await ctx.reply(usersList[i].fullName ,userListKeyboard)
-            }
-
+            await ctx.reply('Выберите департамент исполнителя или тип рассылки:', deptKeyboard)
+            ctx.session.dataStorage.position = 0
         })
 
         worker.on('callback_query', async (ctx) => {
-            
-            const uid = ctx.callbackQuery.data
 
-                ctx.session.dataStorage.user = await UserModel.findOne({
-                    where: {
-                        chatId: uid
-                    }
-                })
+            if (ctx.callbackQuery.data == 'back') {
+                ctx.editMessageText('Выберите департамент исполнителя или тип рассылки:', deptKeyboard)
+                ctx.session.dataStorage.position = 0
+            } else {
+
+                ctx.session.dataStorage.position++
+
+                ctx.session.dataStorage.dept = ctx.callbackQuery.data
 
                 
-                ctx.scene.enter('priority')
+                let usersList = await UserModel.findAll({
+                    where: {
+                        dept: ctx.session.dataStorage.dept
+                    }
+                })
+                    
+                let keyArr = []
+
+                for(let i = 0; i < usersList.length; i++){
+                    keyArr.push([Key.callback(usersList[i].fullName, usersList[i].chatId)])
+                    if (i == usersList.length - 1 || usersList.length == 0) {
+                        keyArr.push([Key.callback('Назад', 'back')])
+                    }
+                }
+
+                if (usersList.length == 0) {
+                    keyArr.push([Key.callback('Назад', 'back')])
+                }
+            
+
+                const userListKeyboard = Keyboard.make(
+                    keyArr
+                    ).inline()
+
+                    if(ctx.session.dataStorage.position == 1){
+                        await ctx.editMessageText(ctx.callbackQuery.data, userListKeyboard)
+                    }
+
+                    if(ctx.session.dataStorage.position == 2){
+                        const uid = ctx.callbackQuery.data
+                        ctx.session.dataStorage.user = await UserModel.findOne({
+                            where: {
+                                chatId: uid
+                            }
+                        })                
+                        ctx.scene.enter('priority')
+                    }
+
+
+            }
+
+            //await ctx.scene.enter('worker')
             
         })
+
+
 
         worker.on('message', (ctx) => {
             if (ctx.message.text == '/') {
@@ -107,6 +137,10 @@ class ScenesGenerator {
 
         return worker
     }
+
+
+
+
 
     //---------------------------------------------------------------
 
@@ -297,6 +331,14 @@ const isOkKeyboard = Keyboard.make([
     [Key.callback('✅','✅')],
     [Key.callback('❌','❌')]
   ]).inline()
+
+const deptKeyboard = Keyboard.make([
+    [Key.callback('Дирекция','Дирекция')],
+    [Key.callback('Финансовый','Финансовый')],
+    [Key.callback('Технический','Технический')],
+    [Key.callback('Бухгалтерия','Бухгалтерия')],
+    [Key.callback('Коммерческий','Коммерческий')]
+]).inline()
 
 
 module.exports = ScenesGenerator

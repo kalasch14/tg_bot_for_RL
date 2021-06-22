@@ -7,7 +7,7 @@ const {
 const sequelize = require('./db')
 
 const UserModel = require('./models/user')
-const TaskModel = require('./models/task')
+
 
 const config = require('config')
 
@@ -49,8 +49,7 @@ const bot = new Telegraf(config.get('token'))
 
 
 const stage = new Stage([
-    taskScene,
-    workerScene, 
+    taskScene, 
     priorityScene, 
     deadlineScene, 
     isOkScene, 
@@ -60,7 +59,8 @@ const stage = new Stage([
     loginScene,
     helloScene,
     deptScene,
-    posScene
+    posScene,
+    workerScene
 ])
 
 bot.use(Telegraf.log())

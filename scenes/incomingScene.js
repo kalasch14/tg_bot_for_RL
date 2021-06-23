@@ -77,7 +77,7 @@ class IncomingScenesGenerator {
                     incomingTask.isDone = true
 
                     await incomingTask.save();
-                    await ctx.reply('Инициатору отправлено сообщение о выполнении!')
+                    await ctx.editMessageText('Инициатору отправлено сообщение о выполнении!')
 
                     let sender = ''
                     if(!ctx.from.last_name){
@@ -99,7 +99,7 @@ class IncomingScenesGenerator {
 
                 //await ctx.scene.leave()
             } else await ctx.reply('err')
-            ctx.scene.leave()
+            //ctx.scene.leave()
         })
 
         return incoming

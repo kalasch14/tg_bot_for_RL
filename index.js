@@ -119,7 +119,9 @@ bot.hears('Поставить задание', async (ctx) => {
         task: null,
         deadline: null,
         worker: null,
-        flag: 0
+        flag: 0,
+        flag2: 0,
+        user: []
     }
 
     ctx.scene.enter('task')

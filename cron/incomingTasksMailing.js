@@ -34,6 +34,7 @@ module.exports =  async (bot) => {
                                 \nПриоритет: ${activeTasksList[k].priority}
                                 \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)}
                                 \nИнициатор: ${activeTasksList[k].initiatorName}
+                                \nИсполнитель(и): ${activeTasksList[k].workersArr.join(', ')}
                                 \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
 
                             `)
@@ -45,6 +46,7 @@ module.exports =  async (bot) => {
                                 \nПриоритет: ${activeTasksList[k].priority}
                                 \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)} просрочен!
                                 \nИнициатор: ${activeTasksList[k].initiatorName}
+                                \nИсполнитель(и): ${activeTasksList[k].workersArr.join(', ')}
                                 \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
                                 \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
 

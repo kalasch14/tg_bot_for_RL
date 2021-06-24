@@ -10,7 +10,6 @@ const { Op } = require('sequelize');
 
 const parseDate = require('../middleware/parseDate')
 const isDone = require('../middleware/isDone')
-const userList = require('../middleware/getListofWorkersForMailing')
 
 class IncomingScenesGenerator {
 
@@ -53,11 +52,12 @@ class IncomingScenesGenerator {
                     
 
                     await ctx.reply(`
-                        \nЗадание: ${incomingTask[i].dataValues.text},
-                        \nИнициатор: ${user.fullName},
-                        \nПриоритет: ${incomingTask[i].dataValues.priority},
-                        \nДедлайн: ${parseDate(incomingTask[i].dataValues.dateEnd)},
-                        \nВыполнено: ${isDone(incomingTask[i].dataValues.isDone)},
+                        \nЗадание: ${incomingTask[i].dataValues.text}
+                        \nИнициатор: ${user.fullName}
+                        \nИсполнитель(и): ${incomingTask[i].dataValues.workersArr.join(', ')}
+                        \nПриоритет: ${incomingTask[i].dataValues.priority}
+                        \nДедлайн: ${parseDate(incomingTask[i].dataValues.dateEnd)}
+                        \nВыполнено: ${isDone(incomingTask[i].dataValues.isDone)}
                         \nДата Создания: ${parseDate(incomingTask[i].dataValues.createdAt)}
                     `,
                     doneKeyboard)
@@ -92,7 +92,7 @@ class IncomingScenesGenerator {
                     } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
 
                     ctx.telegram.sendMessage(incomingTask.initiator, `
-                    \n${userList(incomingTask.dataValues.workersArr)} выполнил(и) задание!
+                    \n${incomingTask.dataValues.workersArr.join(', ')} выполнил(и) задание!
                     \nЗадание: ${ incomingTask.text }
                     \nПриоритет: ${ incomingTask.priority }
                     \nДедлайн: ${ parseDate(incomingTask.dateEnd) }

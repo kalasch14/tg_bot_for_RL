@@ -1,7 +1,6 @@
 const UserModel = require('../models/user')
 const TaskModel = require('../models/task')
 const parseDate = require('../middleware/parseDate');
-const userList = require('../middleware/getListofWorkersForMailing')
 
 module.exports =  async (bot) => {
 
@@ -29,7 +28,7 @@ module.exports =  async (bot) => {
                                 \nЗадание: ${activeTasksList[k].text}
                                 \nПриоритет: ${activeTasksList[k].priority}
                                 \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)}
-                                \nИсполнитель(и): ${ userList(activeTasksList[k].workersArr) }
+                                \nИсполнитель(и): ${ activeTasksList[k].workersArr.join(', ') }
                                 \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
 
                             `)
@@ -40,7 +39,7 @@ module.exports =  async (bot) => {
                                 \nЗадание: ${activeTasksList[k].text}
                                 \nПриоритет: ${activeTasksList[k].priority}
                                 \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)} просрочен!
-                                \nИсполнитель: ${ userList(activeTasksList[k].workersArr) }
+                                \nИсполнитель: ${ activeTasksList[k].workersArr.join(', ') }
                                 \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
                                 \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
 

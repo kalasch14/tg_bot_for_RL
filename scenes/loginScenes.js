@@ -3,7 +3,6 @@ const {
 } = require("telegraf");
 
 const UserModel = require('../models/user')
-const TaskModel = require('../models/task')
 const { Keyboard, Key } = require("telegram-keyboard");
 const { Sequelize } = require("sequelize");
 

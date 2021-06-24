@@ -6,12 +6,12 @@ const {
 const UserModel = require('../models/user')
 const TaskModel = require('../models/task')
 const { Keyboard, Key } = require("telegram-keyboard");
-const { Sequelize, INTEGER } = require("sequelize");
 
 const parseDate = require('../middleware/parseDate')
 const getStringOfNames = require('../middleware/getStringOfNames')
 const getChat = require('../middleware/getChatIdList')
 const getName = require('../middleware/getFullnameList')
+
 const { Op } = require('sequelize');
 
 
@@ -348,7 +348,7 @@ class ScenesGenerator {
                     ctx.telegram.sendMessage(element.dataValues.chatId, `
                     \nНовое задание от ${sender}
                     \nЗадание: ${ ctx.session.dataStorage.task }
-                    \nИсполнитель: ${ element.dataValues.fullName }
+                    \nИсполнитель: ${ getName(ctx.session.dataStorage.user) }
                     \nПриоритет: ${ ctx.session.dataStorage.priority }
                     \nДедлайн: ${ parseDate(ctx.session.dataStorage.deadline) }
                     `) 

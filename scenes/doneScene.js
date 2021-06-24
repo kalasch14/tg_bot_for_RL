@@ -51,6 +51,7 @@ class DoneScenesGenerator {
                         \nПриоритет: ${doneTask[i].dataValues.priority},
                         \nДедлайн: ${parseDate(doneTask[i].dataValues.dateEnd)},
                         \nВыполнено: ${isDone(doneTask[i].dataValues.isDone)},
+                        \nИсполнитель(и): ${doneTask[i].dataValues.workersArr.join(', ')},
                         \nДата Создания: ${parseDate(doneTask[i].dataValues.createdAt)}
                     `)
                     

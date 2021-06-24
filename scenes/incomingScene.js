@@ -4,10 +4,13 @@ const {
 
 const TaskModel = require('../models/task')
 const UserModel = require('../models/user')
-const { Keyboard, Key } = require("telegram-keyboard");
+const { Keyboard, Key } = require("telegram-keyboard")
+
+const { Op } = require('sequelize');
 
 const parseDate = require('../middleware/parseDate')
 const isDone = require('../middleware/isDone')
+const userList = require('../middleware/getListofWorkersForMailing')
 
 class IncomingScenesGenerator {
 
@@ -15,10 +18,13 @@ class IncomingScenesGenerator {
         const incoming = new BaseScene('incoming')
         
         incoming.enter(async (ctx) => {
+
         
             const incomingTask = await TaskModel.findAll({
                 where: {
-                    chatId: ctx.from.id,
+                    chatIdArr: {
+                        [Op.contains]: [ctx.from.id]
+                    },
                     isDone: false
                 }
             })
@@ -77,6 +83,7 @@ class IncomingScenesGenerator {
                     incomingTask.isDone = true
 
                     await incomingTask.save();
+
                     await ctx.editMessageText('Инициатору отправлено сообщение о выполнении!')
 
                     let sender = ''
@@ -85,7 +92,7 @@ class IncomingScenesGenerator {
                     } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
 
                     ctx.telegram.sendMessage(incomingTask.initiator, `
-                    \n${incomingTask.worker} выполнил задание!
+                    \n${userList(incomingTask.dataValues.workersArr)} выполнил(и) задание!
                     \nЗадание: ${ incomingTask.text }
                     \nПриоритет: ${ incomingTask.priority }
                     \nДедлайн: ${ parseDate(incomingTask.dateEnd) }

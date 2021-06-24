@@ -7,6 +7,7 @@ const { Keyboard, Key } = require("telegram-keyboard");
 
 const parseDate = require('../middleware/parseDate')
 const isDone = require('../middleware/isDone')
+const userList = require('../middleware/getListofWorkersForMailing')
 
 class OutboundScenesGenerator {
 
@@ -36,9 +37,10 @@ class OutboundScenesGenerator {
                       ]).inline()
 
 
+
                     await ctx.reply(`
                         \nЗадание: ${task[i].dataValues.text},
-                        \nИсполнитель: ${task[i].dataValues.worker},
+                        \nИсполнитель(и): ${ userList(task[i].dataValues.workersArr) }
                         \nПриоритет: ${task[i].dataValues.priority},
                         \nДедлайн: ${parseDate(task[i].dataValues.dateEnd)},
                         \nВыполнено: ${isDone(task[i].dataValues.isDone)},

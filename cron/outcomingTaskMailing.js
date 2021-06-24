@@ -1,6 +1,7 @@
 const UserModel = require('../models/user')
 const TaskModel = require('../models/task')
 const parseDate = require('../middleware/parseDate');
+const userList = require('../middleware/getListofWorkersForMailing')
 
 module.exports =  async (bot) => {
 
@@ -23,13 +24,12 @@ module.exports =  async (bot) => {
                 if (activeTasksList.length != 0){
                     for(let k = 0; k < activeTasksList.length; k++){
 
-
                         if (!activeTasksList[k].isFailed) {
                             await bot.telegram.sendMessage(usersList[i].chatId,`
-                                \nЗадание: ${activeTasksList[k].text},
-                                \nПриоритет: ${activeTasksList[k].priority},
-                                \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)},
-                                \nИсполнитель: ${activeTasksList[k].worker},
+                                \nЗадание: ${activeTasksList[k].text}
+                                \nПриоритет: ${activeTasksList[k].priority}
+                                \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)}
+                                \nИсполнитель(и): ${ userList(activeTasksList[k].workersArr) }
                                 \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
 
                             `)
@@ -40,7 +40,7 @@ module.exports =  async (bot) => {
                                 \nЗадание: ${activeTasksList[k].text}
                                 \nПриоритет: ${activeTasksList[k].priority}
                                 \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)} просрочен!
-                                \nИсполнитель: ${activeTasksList[k].worker}
+                                \nИсполнитель: ${ userList(activeTasksList[k].workersArr) }
                                 \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
                                 \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
 

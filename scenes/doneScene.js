@@ -8,6 +8,8 @@ const UserModel = require('../models/user')
 const parseDate = require('../middleware/parseDate')
 const isDone = require('../middleware/isDone')
 
+const { Op } = require('sequelize');
+
 class DoneScenesGenerator {
 
     DoneGen(){
@@ -18,7 +20,9 @@ class DoneScenesGenerator {
 
             const doneTask = await TaskModel.findAll({
                 where: {
-                    chatId: ctx.from.id,
+                    chatIdArr: {
+                        [Op.contains]: [ctx.from.id]
+                    },
                     isDone: true
                 }
             })
@@ -26,7 +30,7 @@ class DoneScenesGenerator {
 
             if(doneTask.length == 0){
                 //await ctx.reply(ctx.from.id)
-                await ctx.reply('Нету активных входящих заданий')
+                await ctx.reply('Нету выполненых заданий')
             } else {
 
                 await ctx.reply('Список выполненых заданий')

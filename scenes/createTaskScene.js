@@ -12,6 +12,7 @@ const parseDate = require('../middleware/parseDate')
 const getStringOfNames = require('../middleware/getStringOfNames')
 const getChat = require('../middleware/getChatIdList')
 const getName = require('../middleware/getFullnameList')
+const { Op } = require('sequelize');
 
 
 class ScenesGenerator {
@@ -77,61 +78,94 @@ class ScenesGenerator {
                 ctx.session.dataStorage.position = 0
             } else {
 
-                ctx.session.dataStorage.position++
-
-                if (ctx.session.dataStorage.position != 2) {
-                    ctx.session.dataStorage.dept = ctx.callbackQuery.data
-                }
-                
-                
-                let usersList = await UserModel.findAll({
-                    where: {
-                        dept: ctx.session.dataStorage.dept
-                    }
-                })
-                    
-                let keyArr = []
-                for(let i = 0; i < usersList.length; i++){
-                    keyArr.push([Key.callback(usersList[i].fullName, usersList[i].chatId)])
-                    if (i == usersList.length - 1 || usersList.length == 0) {
-                        keyArr.push([Key.callback(`Выбрать весь ${ctx.session.dataStorage.dept} департамент`, 'dept')])
-                        keyArr.push([Key.callback('Назад', 'back')])
-                    }
-                }
-
-                if (usersList.length == 0) {
-                    keyArr.push([Key.callback('Назад', 'back')])
-                }
-
-                const userListKeyboard = Keyboard.make(keyArr).inline()
-
-                if(ctx.session.dataStorage.position == 1){
-                    await ctx.editMessageText(ctx.callbackQuery.data, userListKeyboard)
-                }
-
-                if (ctx.session.dataStorage.position == 2 && ctx.callbackQuery.data == 'dept') {
+                if(ctx.callbackQuery.data == 'allD'){
 
                     ctx.session.dataStorage.user = await UserModel.findAll({
+                        where: {
+                            position: 'Директор'
+                        }
+                    })
+
+                    await ctx.scene.enter('priority')
+
+                } else if(ctx.callbackQuery.data == 'allDZ'){
+
+                    ctx.session.dataStorage.user = await UserModel.findAll({
+                        where: {
+                            
+                                position: {
+                                    [Op.or]: ['Директор', 'ЗамДир']
+                                }
+                            
+                        }
+                    })
+
+                    await ctx.scene.enter('priority')
+
+                } else if(ctx.callbackQuery.data == 'all'){
+
+                    ctx.session.dataStorage.user = await UserModel.findAll()
+
+                    await ctx.scene.enter('priority')
+
+                } else {
+
+                    ctx.session.dataStorage.position++
+
+                    if (ctx.session.dataStorage.position != 2) {
+                        ctx.session.dataStorage.dept = ctx.callbackQuery.data
+                    }
+                    
+                    
+                    let usersList = await UserModel.findAll({
                         where: {
                             dept: ctx.session.dataStorage.dept
                         }
                     })
-                    await ctx.scene.enter('priority')
-                    
-                }
-                if(ctx.session.dataStorage.position == 2 && ctx.callbackQuery.data != 'dept'){
-
-                    const uid = ctx.callbackQuery.data
-
-                    await ctx.session.dataStorage.user.push( await UserModel.findOne({
-                        where: {
-                            chatId: uid
+                        
+                    let keyArr = []
+                    for(let i = 0; i < usersList.length; i++){
+                        keyArr.push([Key.callback(usersList[i].fullName, usersList[i].chatId)])
+                        if (i == usersList.length - 1 || usersList.length == 0) {
+                            keyArr.push([Key.callback(`Выбрать весь департамент ${ctx.session.dataStorage.dept}`, 'dept')])
+                            keyArr.push([Key.callback('Назад', 'back')])
                         }
-                    }))
-                    
-        
-                    await ctx.scene.enter('priority')
-                }
+                    }
+
+                    if (usersList.length == 0) {
+                        keyArr.push([Key.callback('Назад', 'back')])
+                    }
+
+                    const userListKeyboard = Keyboard.make(keyArr).inline()
+
+                    if(ctx.session.dataStorage.position == 1){
+                        await ctx.editMessageText(ctx.callbackQuery.data, userListKeyboard)
+                    }
+
+                    if (ctx.session.dataStorage.position == 2 && ctx.callbackQuery.data == 'dept') {
+
+                        ctx.session.dataStorage.user = await UserModel.findAll({
+                            where: {
+                                dept: ctx.session.dataStorage.dept
+                            }
+                        })
+                        await ctx.scene.enter('priority')
+                        
+                    }
+                    if(ctx.session.dataStorage.position == 2 && ctx.callbackQuery.data != 'dept'){
+
+                        const uid = ctx.callbackQuery.data
+
+                        await ctx.session.dataStorage.user.push( await UserModel.findOne({
+                            where: {
+                                chatId: uid
+                            }
+                        }))
+                        
+            
+                        await ctx.scene.enter('priority')
+                    }
+                }   
 
             }
             
@@ -280,6 +314,8 @@ class ScenesGenerator {
 
     
         isOk.on('callback_query', async (ctx) => {
+
+            
             
             const ok = String(ctx.callbackQuery.data)
 
@@ -300,7 +336,7 @@ class ScenesGenerator {
                     
                 })
 
-                ctx.reply('Готово!')
+                await ctx.reply('Готово!')
 
                 let sender = ''
 
@@ -308,13 +344,15 @@ class ScenesGenerator {
                     sender = ctx.from.first_name
                 } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
 
-                ctx.telegram.sendMessage(ctx.session.dataStorage.user.chatId, `
-                \nНовое задание от ${sender}
-                \nЗадание: ${ ctx.session.dataStorage.task }
-                \nИсполнитель: ${ ctx.session.dataStorage.user.fullName }
-                \nПриоритет: ${ ctx.session.dataStorage.priority }
-                \nДедлайн: ${ parseDate(ctx.session.dataStorage.deadline) }
-                `)
+                ctx.session.dataStorage.user.forEach(element => {
+                    ctx.telegram.sendMessage(element.dataValues.chatId, `
+                    \nНовое задание от ${sender}
+                    \nЗадание: ${ ctx.session.dataStorage.task }
+                    \nИсполнитель: ${ element.dataValues.fullName }
+                    \nПриоритет: ${ ctx.session.dataStorage.priority }
+                    \nДедлайн: ${ parseDate(ctx.session.dataStorage.deadline) }
+                    `) 
+                });
 
                 ctx.scene.leave()
 
@@ -358,7 +396,10 @@ const deptKeyboard = Keyboard.make([
     [Key.callback('Финансовый','Финансовый')],
     [Key.callback('Технический','Технический')],
     [Key.callback('Бухгалтерия','Бухгалтерия')],
-    [Key.callback('Коммерческий','Коммерческий')]
+    [Key.callback('Коммерческий','Коммерческий')],
+    [Key.callback('Рассылка всем руководителям','allD')],
+    [Key.callback('Рассылка всем руководителям и замам','allDZ')],
+    [Key.callback('Рассылка ВСЕМ','all')],
 ]).inline()
 
 

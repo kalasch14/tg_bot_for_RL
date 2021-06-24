@@ -1,6 +1,7 @@
 const UserModel = require('../models/user')
 const TaskModel = require('../models/task')
 const parseDate = require('../middleware/parseDate');
+const { Op } = require('sequelize');
 
 module.exports =  async (bot) => {
 
@@ -11,7 +12,9 @@ module.exports =  async (bot) => {
 
                 let activeTasksList = await TaskModel.findAll({
                     where: {
-                        chatId: usersList[i].chatId,
+                        chatIdArr: {
+                            [Op.contains]: [usersList[i].chatId]
+                        },
                         isDone: false
                     }
                 })

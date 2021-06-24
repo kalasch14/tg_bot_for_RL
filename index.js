@@ -131,7 +131,7 @@ bot.launch()
 
 
 //Рассылка входящих активных заданий
-cron.schedule('1 9 * * *', function(){
+cron.schedule('29 10 * * *', function(){
     require('./cron/incomingTasksMailing')(bot)
 }, 
 {
@@ -140,7 +140,7 @@ cron.schedule('1 9 * * *', function(){
 })
 
 //Рассылка исходящих заданий
-cron.schedule('0 9 * * *', function(){
+cron.schedule('23 10 * * *', function(){
     require('./cron/outcomingTaskMailing')(bot)
 },
 {

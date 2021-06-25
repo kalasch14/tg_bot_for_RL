@@ -121,7 +121,8 @@ bot.hears('Поставить задание', async (ctx) => {
         worker: null,
         flag: 0,
         flag2: 0,
-        user: []
+        user: [],
+        listOfUsers: []
     }
 
     ctx.scene.enter('task')

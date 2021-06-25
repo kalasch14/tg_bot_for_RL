@@ -40,6 +40,11 @@ const User = sequelize.define('user', {
 
     position: {
         type: DataTypes.STRING,
+    },
+
+    checked: {
+        type: DataTypes.BOOLEAN,
+        defaultValue: false
     }
 },
 {

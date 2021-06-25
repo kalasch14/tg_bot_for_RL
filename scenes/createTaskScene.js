@@ -108,35 +108,67 @@ class ScenesGenerator {
 
                     await ctx.scene.enter('priority')
 
+                } else if(ctx.callbackQuery.data == 'OK'){
+
+                    ctx.session.dataStorage.user = await UserModel.findAll({
+                        where: {
+                            chatId: ctx.session.dataStorage.listOfUsers
+                        }
+                    })
+
+                    if (ctx.session.dataStorage.user.length == 0) {
+
+                        await ctx.reply('Не выбран ни один сотрудник!')
+
+                        await ctx.deleteMessage()
+                        await ctx.scene.reenter()
+                        
+                    } else await ctx.scene.enter('priority')
+
                 } else {
 
-                    ctx.session.dataStorage.position++
+                    if (ctx.session.dataStorage.position < 2) {
+                        ctx.session.dataStorage.position++
+                    }
 
                     if (ctx.session.dataStorage.position != 2) {
                         ctx.session.dataStorage.dept = ctx.callbackQuery.data
                     }
                     
                     
-                    let usersList = await UserModel.findAll({
-                        where: {
-                            dept: ctx.session.dataStorage.dept
+
+                    const uslist = async function(from, arr){
+
+                        let usersList = await UserModel.findAll({
+                            where: {
+                                dept: from.dept
+                            }
+                        })
+                            
+                        for(let i = 0; i < usersList.length; i++){
+                            if (ctx.session.dataStorage.listOfUsers.includes(usersList[i].chatId)) {
+                                arr.push([Key.callback(usersList[i].fullName + " ✅", usersList[i].chatId)])
+                            } else {
+                                arr.push([Key.callback(usersList[i].fullName, usersList[i].chatId)])
+                            }
+                            if (i == usersList.length - 1 || usersList.length == 0) {
+                                arr.push([Key.callback(`Выбрать весь департамент ${from.dept}`, 'dept')])
+                                arr.push([Key.callback('OK','OK')]),
+                                arr.push([Key.callback('Назад', 'back')])
+                            }
                         }
-                    })
-                        
-                    let keyArr = []
-                    for(let i = 0; i < usersList.length; i++){
-                        keyArr.push([Key.callback(usersList[i].fullName, usersList[i].chatId)])
-                        if (i == usersList.length - 1 || usersList.length == 0) {
-                            keyArr.push([Key.callback(`Выбрать весь департамент ${ctx.session.dataStorage.dept}`, 'dept')])
-                            keyArr.push([Key.callback('Назад', 'back')])
+    
+                        if (usersList.length == 0) {
+                            arr.push([Key.callback('Назад', 'back')])
                         }
+
+                        return arr
                     }
 
-                    if (usersList.length == 0) {
-                        keyArr.push([Key.callback('Назад', 'back')])
-                    }
+                    
 
-                    const userListKeyboard = Keyboard.make(keyArr).inline()
+                    let userListKeyboard = Keyboard.make(await uslist(ctx.session.dataStorage, [])).inline()
+
 
                     if(ctx.session.dataStorage.position == 1){
                         await ctx.editMessageText(ctx.callbackQuery.data, userListKeyboard)
@@ -156,14 +188,37 @@ class ScenesGenerator {
 
                         const uid = ctx.callbackQuery.data
 
-                        await ctx.session.dataStorage.user.push( await UserModel.findOne({
+                        // await ctx.session.dataStorage.user.push( await UserModel.findOne({
+                        //     where: {
+                        //         chatId: uid
+                        //     }
+                        // }))
+
+                        
+
+                        const usr = await UserModel.findOne({
                             where: {
                                 chatId: uid
                             }
-                        }))
+                        })
+
+                        if (!ctx.session.dataStorage.listOfUsers.includes(usr.chatId)) {
+                            ctx.session.dataStorage.listOfUsers.push(usr.chatId)
+                        } else {
+                            let i = ctx.session.dataStorage.listOfUsers.indexOf(usr.chatId)
+                            delete ctx.session.dataStorage.listOfUsers[i]
+                        }
+
                         
-            
-                        await ctx.scene.enter('priority')
+                        // usr.checked = !usr.checked
+
+                        // await usr.save()
+
+                        let userListKeyboard = Keyboard.make(await uslist(ctx.session.dataStorage, [])).inline()
+
+                        await ctx.editMessageText(ctx.session.dataStorage.dept, userListKeyboard)
+                        
+                        //await ctx.scene.enter('priority')
                     }
                 }   
 
@@ -189,7 +244,7 @@ class ScenesGenerator {
 
 
 
-    //---------------------------------------------------------------
+    //--------------------------------------------------------------
 
     //Выбор уровня важности
 
@@ -397,6 +452,7 @@ const deptKeyboard = Keyboard.make([
     [Key.callback('Технический','Технический')],
     [Key.callback('Бухгалтерия','Бухгалтерия')],
     [Key.callback('Коммерческий','Коммерческий')],
+    [Key.callback('OK','OK')],
     [Key.callback('Рассылка всем руководителям','allD')],
     [Key.callback('Рассылка всем руководителям и замам','allDZ')],
     [Key.callback('Рассылка ВСЕМ','all')],

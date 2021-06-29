@@ -1,14 +1,15 @@
 const {
     Scenes: { BaseScene }
-} = require("telegraf");
+} = require("telegraf")
 
 const TaskModel = require('../models/task')
 const UserModel = require('../models/user')
 
 const parseDate = require('../middleware/parseDate')
 const isDone = require('../middleware/isDone')
+const { Keyboard, Key } = require("telegram-keyboard")
 
-const { Op } = require('sequelize');
+const { Op } = require('sequelize')
 
 class DoneScenesGenerator {
 
@@ -18,6 +19,105 @@ class DoneScenesGenerator {
 
         done.enter(async (ctx) => {
 
+            await ctx.reply('Выберите тип задания:', selectKeyboard)
+
+        })
+
+        done.on('callback_query', async (ctx) => {
+            
+            if (ctx.callbackQuery.data == 'in') {
+
+                await ctx.deleteMessage()
+                await ctx.scene.enter('inc')
+
+            } else if(ctx.callbackQuery.data == 'out'){
+
+                await ctx.deleteMessage()
+                await ctx.scene.enter('out')
+
+            }
+        })
+
+        return done
+
+    }
+
+
+    OutGen(){
+        const out = new BaseScene('out')
+        
+
+        out.enter(async (ctx) => {
+
+            const doneTask = await TaskModel.findAll({
+                where: {
+                    initiator: ctx.from.id,
+                    isDone: true
+                }
+            })
+            if (doneTask.length == 0) {
+                await ctx.reply('Нету выполненых заданий', backKeyboard)
+            } else {
+
+                for(let i = 0; i < doneTask.length; i++){
+
+                    const user = await UserModel.findOne({
+                        where: {
+                            chatId: doneTask[i].dataValues.initiator,
+                        }
+                    })
+
+                    const deleteKeyboard = Keyboard.make([
+                        [Key.callback('🗑', doneTask[i].dataValues.id)],
+                      ]).inline()
+
+                    await ctx.reply(`
+                        \nЗадание: ${doneTask[i].dataValues.text},
+                        \nИнициатор: ${user.fullName},
+                        \nПриоритет: ${doneTask[i].dataValues.priority},
+                        \nДедлайн: ${parseDate(doneTask[i].dataValues.dateEnd)},
+                        \nВыполнено: ${isDone(doneTask[i].dataValues.isDone)},
+                        \nИсполнитель(и): ${doneTask[i].dataValues.workersArr.join(', ')},
+                        \nДата Создания: ${parseDate(doneTask[i].dataValues.createdAt)}
+                    `, deleteKeyboard)
+                }
+                await ctx.reply('Выполненные задания ⬆️', backKeyboard)
+            }
+
+        })
+
+        out.on('callback_query', async (ctx) => {
+
+            if (ctx.callbackQuery.data == 'back'){
+                await ctx.deleteMessage()
+                await ctx.scene.enter('done')
+            } else {
+                try {
+                    TaskModel.destroy({
+                        where: {
+                            id: ctx.callbackQuery.data
+                        }
+                    })
+
+                    await ctx.editMessageText('Задание удалено!')
+
+                    
+        
+                } catch (e) {
+                    console.log(e);
+                }
+
+            }
+        })
+
+        return out
+    }
+
+    IncGen(){
+        const inc = new BaseScene('inc')
+
+        inc.enter(async (ctx) => {
+
             const doneTask = await TaskModel.findAll({
                 where: {
                     chatIdArr: {
@@ -26,24 +126,17 @@ class DoneScenesGenerator {
                     isDone: true
                 }
             })
-
-
-            if(doneTask.length == 0){
-                //await ctx.reply(ctx.from.id)
-                await ctx.reply('Нету выполненых заданий')
+            if (doneTask.length == 0) {
+                await ctx.reply('Нету выполненых заданий', backKeyboard)
             } else {
 
-                await ctx.reply('Список выполненых заданий')
-
                 for(let i = 0; i < doneTask.length; i++){
-
 
                     const user = await UserModel.findOne({
                         where: {
                             chatId: doneTask[i].dataValues.initiator,
                         }
                     })
-
 
                     await ctx.reply(`
                         \nЗадание: ${doneTask[i].dataValues.text},
@@ -54,19 +147,36 @@ class DoneScenesGenerator {
                         \nИсполнитель(и): ${doneTask[i].dataValues.workersArr.join(', ')},
                         \nДата Создания: ${parseDate(doneTask[i].dataValues.createdAt)}
                     `)
-                    
-            
                 }
+                await ctx.reply('Выполненные задания ⬆️', backKeyboard)
 
             }
 
         })
 
-        return done
+        inc.on('callback_query', async (ctx) => {
 
+            if (ctx.callbackQuery.data == 'back'){
+                await ctx.deleteMessage()
+                await ctx.scene.enter('done')
+            }
+
+        })
+
+        return inc
     }
 
 }
+
+
+const selectKeyboard = Keyboard.make([
+    [Key.callback('Мои задания','in')],
+    [Key.callback('Задания, поставленные мною','out')]
+  ]).inline()
+
+  const backKeyboard = Keyboard.make([
+    [Key.callback('Назад','back')],
+  ]).inline()
 
 
 module.exports = DoneScenesGenerator

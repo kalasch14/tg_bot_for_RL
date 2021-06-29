@@ -86,11 +86,6 @@ class IncomingScenesGenerator {
 
                     await ctx.editMessageText('Инициатору отправлено сообщение о выполнении!')
 
-                    let sender = ''
-                    if(!ctx.from.last_name){
-                        sender = ctx.from.first_name
-                    } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
-
                     ctx.telegram.sendMessage(incomingTask.initiator, `
                     \n${incomingTask.dataValues.workersArr.join(', ')} выполнил(и) задание!
                     \nЗадание: ${ incomingTask.text }

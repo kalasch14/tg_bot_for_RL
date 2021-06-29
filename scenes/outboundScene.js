@@ -18,7 +18,8 @@ class OutboundScenesGenerator {
             
             const task = await TaskModel.findAll({
                 where: {
-                    initiator: ctx.from.id
+                    initiator: ctx.from.id,
+                    isDone: false
                 }
             })
 
@@ -32,18 +33,18 @@ class OutboundScenesGenerator {
                 
 
                     const deleteKeyboard = Keyboard.make([
-                        [Key.callback('🗑', task[i].dataValues.id)],
+                        [Key.callback('Снять задание', task[i].dataValues.id)],
                       ]).inline()
 
 
 
                     await ctx.reply(`
-                        \nЗадание: ${task[i].dataValues.text},
+                        \nЗадание: ${ task[i].dataValues.text },
                         \nИсполнитель(и): ${ task[i].dataValues.workersArr.join(', ') }
-                        \nПриоритет: ${task[i].dataValues.priority},
-                        \nДедлайн: ${parseDate(task[i].dataValues.dateEnd)},
-                        \nВыполнено: ${isDone(task[i].dataValues.isDone)},
-                        \nДата Создания: ${parseDate(task[i].dataValues.createdAt)}
+                        \nПриоритет: ${ task[i].dataValues.priority },
+                        \nДедлайн: ${ parseDate(task[i].dataValues.dateEnd) },
+                        \nВыполнено: ${ isDone(task[i].dataValues.isDone) },
+                        \nДата Создания: ${ parseDate(task[i].dataValues.createdAt) }
                     `,
                     deleteKeyboard)
                     
@@ -57,14 +58,35 @@ class OutboundScenesGenerator {
             if(ctx.callbackQuery.data){
                 try {
 
-                    TaskModel.destroy({
+                    // TaskModel.destroy({
+                    //     where: {
+                    //         id: ctx.callbackQuery.data
+                    //     }
+                    // })
+
+                    await ctx.editMessageText('Исполнителям отправлено сообщение о удалении задания!')
+                    //ctx.scene.enter('outbound')
+
+                    const task = await TaskModel.findOne({
                         where: {
                             id: ctx.callbackQuery.data
                         }
                     })
 
-                    await ctx.editMessageText('Задание Удалено!')
-                    //ctx.scene.enter('outbound')
+                    await task.chatIdArr.forEach(element => {
+
+                    ctx.telegram.sendMessage(element, `
+                    \n${task.initiatorName} удалил задание!
+                    \nЗадание: ${ task.text }
+                    \nИсполнители: ${ task.workersArr.join(', ')  }
+                    \nПриоритет: ${ task.priority }
+                    \nДедлайн: ${ parseDate(task.dateEnd) }
+                    \nДата создания: ${ parseDate(task.createdAt) }
+                    `)
+                        
+                    })
+
+                    await task.destroy()
             
                 } catch (e) {
                     console.log(e);

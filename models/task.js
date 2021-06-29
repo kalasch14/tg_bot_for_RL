@@ -21,17 +21,11 @@ const Task = sequelize.define("task", {
     text: {
         type: DataTypes.STRING,
     },
-    chatId: {
-        type: DataTypes.INTEGER,
-    },
     workersArr: {
         type: DataTypes.ARRAY(DataTypes.STRING)
     },
     chatIdArr: {
         type: DataTypes.ARRAY(DataTypes.INTEGER)
-    },
-    worker: {
-        type: DataTypes.STRING
     },
     isDone: {
         type: DataTypes.BOOLEAN,

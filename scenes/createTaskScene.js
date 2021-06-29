@@ -1,18 +1,18 @@
 
 const {
     Scenes: { BaseScene }
-} = require("telegraf");
+} = require("telegraf")
 
 const UserModel = require('../models/user')
 const TaskModel = require('../models/task')
-const { Keyboard, Key } = require("telegram-keyboard");
+const { Keyboard, Key } = require("telegram-keyboard")
 
 const parseDate = require('../middleware/parseDate')
 const getStringOfNames = require('../middleware/getStringOfNames')
 const getChat = require('../middleware/getChatIdList')
 const getName = require('../middleware/getFullnameList')
 
-const { Op } = require('sequelize');
+const { Op } = require('sequelize')
 
 
 class ScenesGenerator {

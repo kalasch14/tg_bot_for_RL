@@ -37,6 +37,8 @@ const deptScene = logScene.DepartGen()
 const posScene = logScene.PositionGen()
 
 const doneScene = doneTaskScene.DoneGen()
+const outDoneScene = doneTaskScene.OutGen()
+const incDoneScene = doneTaskScene.IncGen()
 
 const outboundScene = outScene.OutboundGen()
 
@@ -56,6 +58,8 @@ const stage = new Stage([
     outboundScene,
     incomingScene,
     doneScene,
+    outDoneScene,
+    incDoneScene,
     loginScene,
     helloScene,
     deptScene,

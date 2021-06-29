@@ -24,7 +24,9 @@ class OutboundScenesGenerator {
             })
 
             if(task.length == 0){
+                
                 await ctx.reply('Нету исходящих заданий')
+
             } else {
 
                 await ctx.reply('Задания, поставленые мною:')
@@ -65,7 +67,6 @@ class OutboundScenesGenerator {
                     // })
 
                     await ctx.editMessageText('Исполнителям отправлено сообщение о удалении задания!')
-                    //ctx.scene.enter('outbound')
 
                     const task = await TaskModel.findOne({
                         where: {
@@ -73,16 +74,16 @@ class OutboundScenesGenerator {
                         }
                     })
 
-                    await task.chatIdArr.forEach(element => {
+                    await task.chatIdArr.forEach(async element => {
 
-                    ctx.telegram.sendMessage(element, `
-                    \n${task.initiatorName} удалил задание!
-                    \nЗадание: ${ task.text }
-                    \nИсполнители: ${ task.workersArr.join(', ')  }
-                    \nПриоритет: ${ task.priority }
-                    \nДедлайн: ${ parseDate(task.dateEnd) }
-                    \nДата создания: ${ parseDate(task.createdAt) }
-                    `)
+                        await ctx.telegram.sendMessage(element, `
+                        \n${task.initiatorName} удалил задание!
+                        \nЗадание: ${ task.text }
+                        \nИсполнители: ${ task.workersArr.join(', ')  }
+                        \nПриоритет: ${ task.priority }
+                        \nДедлайн: ${ parseDate(task.dateEnd) }
+                        \nДата создания: ${ parseDate(task.createdAt) }
+                        `)
                         
                     })
 
@@ -91,9 +92,7 @@ class OutboundScenesGenerator {
                 } catch (e) {
                     console.log(e);
                 }
-
-            } else await ctx.reply('err')
-            //ctx.scene.leave()
+            }
         })
     
         return outbound

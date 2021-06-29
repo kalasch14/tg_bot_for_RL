@@ -93,7 +93,7 @@ class DoneScenesGenerator {
                 await ctx.scene.enter('done')
             } else {
                 try {
-                    TaskModel.destroy({
+                    await TaskModel.destroy({
                         where: {
                             id: ctx.callbackQuery.data
                         }

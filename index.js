@@ -86,7 +86,7 @@ bot.start( async (ctx) => {
     
         if (isUserExist) {
            
-            ctx.scene.enter('hello')
+            await ctx.scene.enter('hello')
 
         } else {
             ctx.session.dataStorage = {
@@ -107,13 +107,13 @@ bot.start( async (ctx) => {
 //Реакция на кнопки
 
 
-bot.hears('Входящие задания', async (ctx) => {ctx.scene.enter('incoming')})
+bot.hears('Входящие задания', async (ctx) => await ctx.scene.enter('incoming'))
 
 
-bot.hears('Исходящие задания', async (ctx) => ctx.scene.enter('outbound'))
+bot.hears('Исходящие задания', async (ctx) => await ctx.scene.enter('outbound'))
 
 
-bot.hears('Выполненные задания', async (ctx) => ctx.scene.enter('done'))
+bot.hears('Выполненные задания', async (ctx) => await ctx.scene.enter('done'))
 
 
 bot.hears('Поставить задание', async (ctx) => {
@@ -129,7 +129,7 @@ bot.hears('Поставить задание', async (ctx) => {
         listOfUsers: []
     }
 
-    ctx.scene.enter('task')
+    await ctx.scene.enter('task')
 })
 
 bot.launch()

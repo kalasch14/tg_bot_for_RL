@@ -1,12 +1,12 @@
 const {
     Scenes: { BaseScene }
-} = require("telegraf");
+} = require("telegraf")
 
 const TaskModel = require('../models/task')
 const UserModel = require('../models/user')
 const { Keyboard, Key } = require("telegram-keyboard")
 
-const { Op } = require('sequelize');
+const { Op } = require('sequelize')
 
 const parseDate = require('../middleware/parseDate')
 const isDone = require('../middleware/isDone')
@@ -30,15 +30,15 @@ class IncomingScenesGenerator {
 
 
             if(incomingTask.length == 0){
-                //await ctx.reply(ctx.from.id)
+
                 await ctx.reply('Нету активных входящих заданий')
+
             } else {
 
                 await ctx.reply('Входящие задания: ')
 
                 for(let i = 0; i < incomingTask.length; i++){
 
-            
                     const doneKeyboard = Keyboard.make([
                         [Key.callback('Отметить Выполненым', incomingTask[i].dataValues.id)],
                     ]).inline()
@@ -86,7 +86,7 @@ class IncomingScenesGenerator {
 
                     await ctx.editMessageText('Инициатору отправлено сообщение о выполнении!')
 
-                    ctx.telegram.sendMessage(incomingTask.initiator, `
+                    await ctx.telegram.sendMessage(incomingTask.initiator, `
                     \n${incomingTask.dataValues.workersArr.join(', ')} выполнил(и) задание!
                     \nЗадание: ${ incomingTask.text }
                     \nПриоритет: ${ incomingTask.priority }
@@ -98,10 +98,7 @@ class IncomingScenesGenerator {
                 } catch (e) {
                     console.log(e);
                 }
-
-                //await ctx.scene.leave()
-            } else await ctx.reply('err')
-            //ctx.scene.leave()
+            }
         })
 
         return incoming

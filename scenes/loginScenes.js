@@ -4,7 +4,6 @@ const {
 
 const UserModel = require('../models/user')
 const { Keyboard, Key } = require("telegram-keyboard");
-const { Sequelize } = require("sequelize");
 
 
 class LoginScenesGenerator {
@@ -14,7 +13,9 @@ class LoginScenesGenerator {
         const login = new BaseScene('login')
 
         login.enter(async (ctx) => {
+
             await ctx.reply('Введите пароль!')
+
         })
 
         login.on('text', async (ctx) => {
@@ -23,8 +24,10 @@ class LoginScenesGenerator {
                 await ctx.scene.enter('dept')
 
             } else {
+
                 await ctx.reply('Пароль не верный!')
                 await ctx.scene.reenter()
+
             }
         })
 
@@ -37,7 +40,7 @@ class LoginScenesGenerator {
 
         hello.enter(async (ctx)=> {
             await ctx.reply('👋')
-            const keyboard = await Keyboard.make([
+            const keyboard = Keyboard.make([
                 ['Входящие задания', 'Исходящие задания'],
                 ['Поставить задание', 'Выполненные задания'],
             ])
@@ -88,23 +91,23 @@ class LoginScenesGenerator {
         pos.enter(async (ctx) => {
             if (ctx.callbackQuery.data == 'Дирекция') {
 
-                ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
+                await ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
                 
             } else if (ctx.session.dataStorage.userDept == 'Финансовый'){
 
-                ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
+                await ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
 
             } else if (ctx.callbackQuery.data == 'Технический'){
 
-                ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
+                await ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
 
             } else if (ctx.callbackQuery.data == 'Бухгалтерия'){
 
-                ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
+                await ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
 
             } else if (ctx.callbackQuery.data == 'Коммерческий'){
 
-                ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
+                await ctx.reply(`Выберите должность, ваш департамент ${ctx.session.dataStorage.userDept}`, positionKeyboard)
 
             }
         })

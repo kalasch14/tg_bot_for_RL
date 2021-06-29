@@ -38,16 +38,16 @@ class ScenesGenerator {
             if(ctx.message.text !== '/'){
                 ctx.session.dataStorage.task = currentTask
                 //this.task = currentTask
-                ctx.scene.enter('worker')
+                await ctx.scene.enter('worker')
             } else {
-                ctx.reply('Задание отменено!')
-                ctx.scene.leave()
+                await ctx.reply('Задание отменено!')
+                await ctx.scene.leave()
             }
         })
 
-        task.on('message', (ctx) => {
-            ctx.reply('Не понял, попробуй еще раз')
-            ctx.scene.reenter()
+        task.on('message', async (ctx) => {
+            await ctx.reply('Не понял, попробуй еще раз')
+            await ctx.scene.reenter()
         })
 
         return task
@@ -74,7 +74,7 @@ class ScenesGenerator {
         worker.on('callback_query', async (ctx) => {
 
             if (ctx.callbackQuery.data == 'back') {
-                ctx.editMessageText('Выберите департамент исполнителя или тип рассылки:', deptKeyboard)
+                await ctx.editMessageText('Выберите департамент исполнителя или тип рассылки:', deptKeyboard)
                 ctx.session.dataStorage.position = 0
             } else {
 
@@ -147,19 +147,19 @@ class ScenesGenerator {
                             
                         for(let i = 0; i < usersList.length; i++){
                             if (ctx.session.dataStorage.listOfUsers.includes(usersList[i].chatId)) {
-                                arr.push([Key.callback(usersList[i].fullName + " ✅", usersList[i].chatId)])
+                                await arr.push([Key.callback(usersList[i].fullName + " ✅", usersList[i].chatId)])
                             } else {
-                                arr.push([Key.callback(usersList[i].fullName, usersList[i].chatId)])
+                                await arr.push([Key.callback(usersList[i].fullName, usersList[i].chatId)])
                             }
                             if (i == usersList.length - 1 || usersList.length == 0) {
-                                arr.push([Key.callback(`Выбрать весь департамент ${from.dept}`, 'dept')])
-                                arr.push([Key.callback('OK','OK')]),
-                                arr.push([Key.callback('Назад', 'back')])
+                                await arr.push([Key.callback(`Выбрать весь департамент ${from.dept}`, 'dept')])
+                                await arr.push([Key.callback('OK','OK')]),
+                                await arr.push([Key.callback('Назад', 'back')])
                             }
                         }
     
                         if (usersList.length == 0) {
-                            arr.push([Key.callback('Назад', 'back')])
+                            await arr.push([Key.callback('Назад', 'back')])
                         }
 
                         return arr
@@ -176,25 +176,32 @@ class ScenesGenerator {
 
                     if (ctx.session.dataStorage.position == 2 && ctx.callbackQuery.data == 'dept') {
 
-                        ctx.session.dataStorage.user = await UserModel.findAll({
+
+                        let user = await UserModel.findAll({
                             where: {
                                 dept: ctx.session.dataStorage.dept
                             }
                         })
-                        await ctx.scene.enter('priority')
+
+                        user.forEach(async item => {
+                            if (!ctx.session.dataStorage.listOfUsers.includes(item.chatId)) {
+                                await ctx.session.dataStorage.listOfUsers.push(item.chatId)
+                            } else {
+                                let i = ctx.session.dataStorage.listOfUsers.indexOf(item.chatId)
+                                delete ctx.session.dataStorage.listOfUsers[i]
+                            }
+    
+                            let userListKeyboard = Keyboard.make(await uslist(ctx.session.dataStorage, [])).inline()
+    
+                            await ctx.editMessageText(ctx.session.dataStorage.dept, userListKeyboard)
+                        })
+
                         
                     }
                     if(ctx.session.dataStorage.position == 2 && ctx.callbackQuery.data != 'dept'){
 
                         const uid = ctx.callbackQuery.data
 
-                        // await ctx.session.dataStorage.user.push( await UserModel.findOne({
-                        //     where: {
-                        //         chatId: uid
-                        //     }
-                        // }))
-
-                        
 
                         const usr = await UserModel.findOne({
                             where: {
@@ -203,7 +210,7 @@ class ScenesGenerator {
                         })
 
                         if (!ctx.session.dataStorage.listOfUsers.includes(usr.chatId)) {
-                            ctx.session.dataStorage.listOfUsers.push(usr.chatId)
+                            await ctx.session.dataStorage.listOfUsers.push(usr.chatId)
                         } else {
                             let i = ctx.session.dataStorage.listOfUsers.indexOf(usr.chatId)
                             delete ctx.session.dataStorage.listOfUsers[i]
@@ -228,13 +235,13 @@ class ScenesGenerator {
 
 
 
-        worker.on('message', (ctx) => {
+        worker.on('message', async (ctx) => {
             if (ctx.message.text == '/') {
-                ctx.reply('Задание отменено!')
-                ctx.scene.leave()
+                await ctx.reply('Задание отменено!')
+                await ctx.scene.leave()
             } else {
-            ctx.reply('Не понял, попробуй еще раз')
-            ctx.scene.reenter()
+                await ctx.reply('Не понял, попробуй еще раз')
+                await ctx.scene.reenter()
             }
         })
         return worker
@@ -260,8 +267,8 @@ class ScenesGenerator {
 
         priority.on('text', async (ctx) => {
             if(ctx.message.text == '/'){
-                ctx.reply('Задание отменено!')
-                ctx.scene.leave()
+                await ctx.reply('Задание отменено!')
+                await ctx.scene.leave()
             }
         })
     
@@ -272,13 +279,13 @@ class ScenesGenerator {
 
             if(priorityLevel){
                 ctx.session.dataStorage.priority = priorityLevel
-                ctx.scene.enter('deadline')
+                await ctx.scene.enter('deadline')
             }
         })
 
-        priority.on('message', (ctx) => {
-            ctx.reply('Не понял, попробуй еще раз')
-            ctx.scene.reenter()
+        priority.on('message', async (ctx) => {
+            await ctx.reply('Не понял, попробуй еще раз')
+            await ctx.scene.reenter()
         })
         return priority
 
@@ -293,8 +300,6 @@ class ScenesGenerator {
     DeadlineGen(){
         
         const deadline = new BaseScene('deadline')
-
-
 
         deadline.enter(async (ctx) => {
             await ctx.reply('Введите дедлайн задания в формате гггг.мм.дд')
@@ -330,18 +335,13 @@ class ScenesGenerator {
             } else if(ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
                         ctx.session.dataStorage.deadline = enteredDate
 
-                        // let workersList = ''
-                        // ctx.session.dataStorage.user.forEach(element => {
-                        //     workersList += `\n ${element.dataValues.fullName}`
-                        // });
-
                         await ctx.reply(`
                         \nЗадание: ${ ctx.session.dataStorage.task }
                         \nИсполнитель(и): ${ getStringOfNames(ctx.session.dataStorage.user) }
                         \nПриоритет: ${ ctx.session.dataStorage.priority }
                         \nДедлайн: ${ parseDate(ctx.session.dataStorage.deadline) }
                         `)
-                        ctx.scene.enter('isOk')
+                        await ctx.scene.enter('isOk')
                     } else if (ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
                         await ctx.reply('Введен неверный формат!').then(ctx.session.dataStorage.flag = 1).then(ctx.scene.reenter())
                     }
@@ -369,8 +369,6 @@ class ScenesGenerator {
 
     
         isOk.on('callback_query', async (ctx) => {
-
-            
             
             const ok = String(ctx.callbackQuery.data)
 
@@ -380,11 +378,9 @@ class ScenesGenerator {
 
                     priority: ctx.session.dataStorage.priority,
                     dateEnd: ctx.session.dataStorage.deadline,
-                    //worker: ctx.session.dataStorage.user,
                     text: ctx.session.dataStorage.task,
                     initiator: ctx.from.id,
                     isDone: false,
-                    //chatId: ctx.session.dataStorage.user,
                     chatIdArr: getChat(ctx.session.dataStorage.user),
                     workersArr: getName(ctx.session.dataStorage.user),
                     initiatorName: ctx.from.first_name + ' ' + ctx.from.last_name
@@ -397,11 +393,11 @@ class ScenesGenerator {
 
                 if(!ctx.from.last_name){
                     sender = ctx.from.first_name
-                } else sender = `${ctx.from.first_name} ${ctx.from.last_name}`
+                } else sender = `${ ctx.from.first_name } ${ ctx.from.last_name }`
 
-                ctx.session.dataStorage.user.forEach(element => {
-                    ctx.telegram.sendMessage(element.dataValues.chatId, `
-                    \nНовое задание от ${sender}
+                await ctx.session.dataStorage.user.forEach(async element => {
+                    await ctx.telegram.sendMessage(element.dataValues.chatId, `
+                    \nНовое задание от ${ sender }
                     \nЗадание: ${ ctx.session.dataStorage.task }
                     \nИсполнитель: ${ getName(ctx.session.dataStorage.user) }
                     \nПриоритет: ${ ctx.session.dataStorage.priority }
@@ -409,21 +405,23 @@ class ScenesGenerator {
                     `) 
                 });
 
-                ctx.scene.leave()
+                await ctx.scene.leave()
 
             } else if(ok === '❌'){
+
+                ctx.session.dataStorage.listOfUsers = []
                
                 await ctx.reply('Повторим')
 
-                ctx.scene.enter('task')
+                await ctx.scene.enter('task')
 
             }
         })
     
 
-        isOk.on('message', (ctx) => {
-            ctx.reply('Не понял, попробуй еще раз')
-            ctx.scene.reenter()
+        isOk.on('message', async (ctx) => {
+            await ctx.reply('Не понял, попробуйте еще раз')
+            await ctx.scene.reenter()
         })
         return isOk
     }
@@ -452,7 +450,6 @@ const deptKeyboard = Keyboard.make([
     [Key.callback('Технический','Технический')],
     [Key.callback('Бухгалтерия','Бухгалтерия')],
     [Key.callback('Коммерческий','Коммерческий')],
-    [Key.callback('OK','OK')],
     [Key.callback('Рассылка всем руководителям','allD')],
     [Key.callback('Рассылка всем руководителям и замам','allDZ')],
     [Key.callback('Рассылка ВСЕМ','all')],

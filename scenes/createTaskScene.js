@@ -27,9 +27,9 @@ class ScenesGenerator {
         const task = new BaseScene('task')
         task.enter(async (ctx) => {
             await ctx.reply(`
-            \nУкажи задание к исполнению
-            \nДля отмены создания задания нажмите "/"
-            `)
+            \nУкажите задание к исполнению
+            \n<i>Для отмены создания задания нажмите "/"</i>
+            `, {parse_mode: 'html'})
         })
         task.on('text', async (ctx) => {
             const currentTask = String(ctx.message.text)
@@ -284,7 +284,7 @@ class ScenesGenerator {
         })
 
         priority.on('message', async (ctx) => {
-            await ctx.reply('Не понял, попробуй еще раз')
+            await ctx.reply('Не понял, попробуйте еще раз')
             await ctx.scene.reenter()
         })
         return priority
@@ -335,11 +335,11 @@ class ScenesGenerator {
             } else if(ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
                         ctx.session.dataStorage.deadline = enteredDate
 
-                        await ctx.reply(`
-                        \nЗадание: ${ ctx.session.dataStorage.task }
-                        \nИсполнитель(и): ${ getStringOfNames(ctx.session.dataStorage.user) }
-                        \nПриоритет: ${ ctx.session.dataStorage.priority }
-                        \nДедлайн: ${ parseDate(ctx.session.dataStorage.deadline) }
+                        await ctx.replyWithMarkdown(`
+                        \n*Задание:* ${ ctx.session.dataStorage.task }
+                        \n*Исполнитель(и):* ${ getStringOfNames(ctx.session.dataStorage.user) }
+                        \n*Приоритет:* ${ ctx.session.dataStorage.priority }
+                        \n*Дедлайн:* ${ parseDate(ctx.session.dataStorage.deadline) }
                         `)
                         await ctx.scene.enter('isOk')
                     } else if (ctx.session.dataStorage.flag == 0 && enteredDate != "Invalid Date"){
@@ -397,12 +397,12 @@ class ScenesGenerator {
 
                 await ctx.session.dataStorage.user.forEach(async element => {
                     await ctx.telegram.sendMessage(element.dataValues.chatId, `
-                    \nНовое задание от ${ sender }
-                    \nЗадание: ${ ctx.session.dataStorage.task }
-                    \nИсполнитель: ${ getName(ctx.session.dataStorage.user) }
-                    \nПриоритет: ${ ctx.session.dataStorage.priority }
-                    \nДедлайн: ${ parseDate(ctx.session.dataStorage.deadline) }
-                    `) 
+                    \n<i>Новое задание от <u>${ sender }</u></i>
+                    \n<b>Задание:</b> ${ ctx.session.dataStorage.task }
+                    \n<b>Исполнитель:</b> ${ getName(ctx.session.dataStorage.user) }
+                    \n<b>Приоритет:</b> ${ ctx.session.dataStorage.priority }
+                    \n<b>Дедлайн:</b> ${ parseDate(ctx.session.dataStorage.deadline) }
+                    `, {parse_mode: 'html'}) 
                 });
 
                 await ctx.scene.leave()

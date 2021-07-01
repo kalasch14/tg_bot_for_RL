@@ -25,25 +25,25 @@ module.exports =  async (bot) => {
 
                         if (!activeTasksList[k].isFailed) {
                             await bot.telegram.sendMessage(usersList[i].chatId,`
-                                \nЗадание: ${activeTasksList[k].text}
-                                \nПриоритет: ${activeTasksList[k].priority}
-                                \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)}
-                                \nИсполнитель(и): ${ activeTasksList[k].workersArr.join(', ') }
-                                \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
+                                \n<b>Задание:</b> ${activeTasksList[k].text}
+                                \n<b>Приоритет:</b> ${activeTasksList[k].priority}
+                                \n<b>Дедлайн:</b> ${parseDate(activeTasksList[k].dateEnd)}
+                                \n<b>Исполнитель(и):</b> ${ activeTasksList[k].workersArr.join(', ') }
+                                \n<b>Дата Создания:</b> ${parseDate(activeTasksList[k].createdAt)}
 
-                            `)
+                            `, {parse_mode: 'html'})
                         } else {
                             await bot.telegram.sendMessage(usersList[i].chatId,`
                                 \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
-                                \nВремя выполнения задания истекло!
-                                \nЗадание: ${activeTasksList[k].text}
-                                \nПриоритет: ${activeTasksList[k].priority}
-                                \nДедлайн: ${parseDate(activeTasksList[k].dateEnd)} просрочен!
-                                \nИсполнитель: ${ activeTasksList[k].workersArr.join(', ') }
-                                \nДата Создания: ${parseDate(activeTasksList[k].createdAt)}
+                                \n<b>Время выполнения задания истекло!</b>
+                                \n<b>Задание:</b> ${activeTasksList[k].text}
+                                \n<b>Приоритет:</b> ${activeTasksList[k].priority}
+                                \n<b>Дедлайн:</b> ${parseDate(activeTasksList[k].dateEnd)} <b>просрочен!</b>
+                                \n<b>Исполнитель:</b> ${ activeTasksList[k].workersArr.join(', ') }
+                                \n<b>Дата Создания:</b> ${parseDate(activeTasksList[k].createdAt)}
                                 \n❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️☠️❗️
 
-                            `)
+                            `, {parse_mode: 'html'})
                         }
                     }
                 }

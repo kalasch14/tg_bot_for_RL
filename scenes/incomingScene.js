@@ -6,6 +6,7 @@ const TaskModel = require('../models/task')
 const UserModel = require('../models/user')
 const { Keyboard, Key } = require("telegram-keyboard")
 
+
 const { Op } = require('sequelize')
 
 const parseDate = require('../middleware/parseDate')
@@ -31,11 +32,11 @@ class IncomingScenesGenerator {
 
             if(incomingTask.length == 0){
 
-                await ctx.reply('Нету активных входящих заданий')
+                await ctx.replyWithMarkdown('Нету активных входящих заданий!')
 
             } else {
 
-                await ctx.reply('Входящие задания: ')
+                await ctx.replyWithMarkdown('Входящие задания:')
 
                 for(let i = 0; i < incomingTask.length; i++){
 
@@ -51,14 +52,14 @@ class IncomingScenesGenerator {
 
                     
 
-                    await ctx.reply(`
-                        \nЗадание: ${incomingTask[i].dataValues.text}
-                        \nИнициатор: ${user.fullName}
-                        \nИсполнитель(и): ${incomingTask[i].dataValues.workersArr.join(', ')}
-                        \nПриоритет: ${incomingTask[i].dataValues.priority}
-                        \nДедлайн: ${parseDate(incomingTask[i].dataValues.dateEnd)}
-                        \nВыполнено: ${isDone(incomingTask[i].dataValues.isDone)}
-                        \nДата Создания: ${parseDate(incomingTask[i].dataValues.createdAt)}
+                    await ctx.replyWithMarkdown(`
+                        \n*Задание:* ${incomingTask[i].dataValues.text}
+                        \n*Инициатор:* ${user.fullName}
+                        \n*Исполнитель(и):* ${incomingTask[i].dataValues.workersArr.join(', ')}
+                        \n*Приоритет:* ${incomingTask[i].dataValues.priority}
+                        \n*Дедлайн:* ${parseDate(incomingTask[i].dataValues.dateEnd)}
+                        \n*Выполнено:* ${isDone(incomingTask[i].dataValues.isDone)}
+                        \n*Дата Создания:* ${parseDate(incomingTask[i].dataValues.createdAt)}
                     `,
                     doneKeyboard)
                     
@@ -84,15 +85,15 @@ class IncomingScenesGenerator {
 
                     await incomingTask.save();
 
-                    await ctx.editMessageText('Инициатору отправлено сообщение о выполнении!')
+                    await ctx.editMessageText(`Инициатору отправлено сообщение о выполнении!`)
 
                     await ctx.telegram.sendMessage(incomingTask.initiator, `
-                    \n${incomingTask.dataValues.workersArr.join(', ')} выполнил(и) задание!
-                    \nЗадание: ${ incomingTask.text }
-                    \nПриоритет: ${ incomingTask.priority }
-                    \nДедлайн: ${ parseDate(incomingTask.dateEnd) }
-                    \nДата создания: ${ parseDate(incomingTask.createdAt) }
-                    `)
+                    \n<i><u>${incomingTask.dataValues.workersArr.join(', ')}</u> выполнил(и) задание!</i>
+                    \n<b>Задание:</b> ${ incomingTask.text }
+                    \n<b>Приоритет:</b> ${ incomingTask.priority }
+                    \n<b>Дедлайн:</b> ${ parseDate(incomingTask.dateEnd) }
+                    \n<b>Дата создания:</b> ${ parseDate(incomingTask.createdAt) }
+                    `, {parse_mode: 'html'})
 
             
                 } catch (e) {

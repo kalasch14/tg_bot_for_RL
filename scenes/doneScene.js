@@ -71,14 +71,14 @@ class DoneScenesGenerator {
                         [Key.callback('🗑', doneTask[i].dataValues.id)],
                       ]).inline()
 
-                    await ctx.reply(`
-                        \nЗадание: ${doneTask[i].dataValues.text},
-                        \nИнициатор: ${user.fullName},
-                        \nПриоритет: ${doneTask[i].dataValues.priority},
-                        \nДедлайн: ${parseDate(doneTask[i].dataValues.dateEnd)},
-                        \nВыполнено: ${isDone(doneTask[i].dataValues.isDone)},
-                        \nИсполнитель(и): ${doneTask[i].dataValues.workersArr.join(', ')},
-                        \nДата Создания: ${parseDate(doneTask[i].dataValues.createdAt)}
+                    await ctx.replyWithMarkdown(`
+                        \n*Задание:* ${doneTask[i].dataValues.text},
+                        \n*Инициатор:* ${user.fullName},
+                        \n*Приоритет:* ${doneTask[i].dataValues.priority},
+                        \n*Дедлайн:* ${parseDate(doneTask[i].dataValues.dateEnd)},
+                        \n*Выполнено:* ${isDone(doneTask[i].dataValues.isDone)},
+                        \n*Исполнитель(и):* ${doneTask[i].dataValues.workersArr.join(', ')},
+                        \n*Дата Создания:* ${parseDate(doneTask[i].dataValues.createdAt)}
                     `, deleteKeyboard)
                 }
                 await ctx.reply('Выполненные задания ⬆️', backKeyboard)
@@ -138,14 +138,14 @@ class DoneScenesGenerator {
                         }
                     })
 
-                    await ctx.reply(`
-                        \nЗадание: ${doneTask[i].dataValues.text},
-                        \nИнициатор: ${user.fullName},
-                        \nПриоритет: ${doneTask[i].dataValues.priority},
-                        \nДедлайн: ${parseDate(doneTask[i].dataValues.dateEnd)},
-                        \nВыполнено: ${isDone(doneTask[i].dataValues.isDone)},
-                        \nИсполнитель(и): ${doneTask[i].dataValues.workersArr.join(', ')},
-                        \nДата Создания: ${parseDate(doneTask[i].dataValues.createdAt)}
+                    await ctx.replyWithMarkdown(`
+                        \n*Задание:* ${doneTask[i].dataValues.text},
+                        \n*Инициатор:* ${user.fullName},
+                        \n*Приоритет:* ${doneTask[i].dataValues.priority},
+                        \n*Дедлайн:* ${parseDate(doneTask[i].dataValues.dateEnd)},
+                        \n*Выполнено:* ${isDone(doneTask[i].dataValues.isDone)},
+                        \n*Исполнитель(и):* ${doneTask[i].dataValues.workersArr.join(', ')},
+                        \n*Дата Создания:* ${parseDate(doneTask[i].dataValues.createdAt)}
                     `)
                 }
                 await ctx.reply('Выполненные задания ⬆️', backKeyboard)

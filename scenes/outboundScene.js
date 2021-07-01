@@ -40,13 +40,13 @@ class OutboundScenesGenerator {
 
 
 
-                    await ctx.reply(`
-                        \nЗадание: ${ task[i].dataValues.text },
-                        \nИсполнитель(и): ${ task[i].dataValues.workersArr.join(', ') }
-                        \nПриоритет: ${ task[i].dataValues.priority },
-                        \nДедлайн: ${ parseDate(task[i].dataValues.dateEnd) },
-                        \nВыполнено: ${ isDone(task[i].dataValues.isDone) },
-                        \nДата Создания: ${ parseDate(task[i].dataValues.createdAt) }
+                    await ctx.replyWithMarkdown(`
+                        \n*Задание:* ${ task[i].dataValues.text },
+                        \n*Исполнитель(и):* ${ task[i].dataValues.workersArr.join(', ') }
+                        \n*Приоритет:* ${ task[i].dataValues.priority },
+                        \n*Дедлайн:* ${ parseDate(task[i].dataValues.dateEnd) },
+                        \n*Выполнено:* ${ isDone(task[i].dataValues.isDone) },
+                        \n*Дата Создания:* ${ parseDate(task[i].dataValues.createdAt) }
                     `,
                     deleteKeyboard)
                     
@@ -76,14 +76,14 @@ class OutboundScenesGenerator {
 
                     await task.chatIdArr.forEach(async element => {
 
-                        await ctx.telegram.sendMessage(element, `
-                        \n${task.initiatorName} удалил задание!
-                        \nЗадание: ${ task.text }
-                        \nИсполнители: ${ task.workersArr.join(', ')  }
-                        \nПриоритет: ${ task.priority }
-                        \nДедлайн: ${ parseDate(task.dateEnd) }
-                        \nДата создания: ${ parseDate(task.createdAt) }
-                        `)
+                        await ctx.telegram.sendMessage(element,`
+                        \n<i><u>${task.initiatorName}</u> удалил задание!</i>
+                        \n<b>Задание:</b> ${ task.text }
+                        \n<b>Исполнители:</b> ${ task.workersArr.join(', ')  }
+                        \n<b>Приоритет:</b> ${ task.priority }
+                        \n<b>Дедлайн:</b> ${ parseDate(task.dateEnd) }
+                        \n<b>Дата создания:</b> ${ parseDate(task.createdAt) }
+                        `, {parse_mode: 'html'})
                         
                     })
 
